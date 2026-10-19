@@ -117,7 +117,7 @@ function defWorld(){
         grove:{n:'Роща',sx:7,sy:10,rows:g,portals:{'7,12':['meadow',10,4]},objs:[{x:4,y:4,i:'apple'}]}},
   code:"function onJoin(p){ api.toast('Добро пожаловать, '+p.n+'!') }\nfunction onPickup(it){\n  api.toast('Подобрано: '+it.e+' '+it.n);\n  if(it.id=='star') api.speed(1.6)\n}\nfunction onTick(){}"};
 }
-const api={sound:id=>playSnd(id),music:id=>playMus(id),stopMusic:()=>stopMus(),anim:(n,ms,e)=>{const f=fdv();me.an={n,e,t:Date.now()+(ms||1000),tx:(Math.floor(me.x+f.x)+.5)*T,ty:(Math.floor(me.y+f.y)+.5)*T}},fx:e=>fx.push({e,x:me.x*T,y:me.y*T-40,t0:performance.now()}),after:(ms,fn)=>setTimeout(()=>{try{fn()}catch(e){toast(e.message)}},ms),facing:()=>tileAt(me.x+fdv().x,me.y+fdv().y),near:ch=>[[1,0],[-1,0],[0,1],[0,-1]].some(([a,b])=>tileAt(me.x+a,me.y+b)==ch),tile:(x,y)=>tileAt(x,y),has:id=>me.inv[id]|0,consume:id=>{id=id||me.sel;if(me.inv[id]>0){me.inv[id]--;if(!me.inv[id]){if(me.sel==id)me.sel='';updHand()}saveMe()}},island:()=>tp('isl'),place:ch=>{if(me.l!='isl'){toast('Строить можно на своём острове');return false}const f=fdv(),x=Math.floor(me.x+f.x),y=Math.floor(me.y+f.y),r=me.island.rows;if(y<1||x<1||y>=r.length-1||x>=r[0].length-1||me.island.portals[x+','+y])return false;r[y]=r[y].slice(0,x)+ch+r[y].slice(x+1);saveMe();return true},chest:()=>{if(me.l!='isl'){toast('Сундук ставится на острове');return false}const f=fdv();(me.island.objs=me.island.objs||[]).push({x:Math.floor(me.x+f.x),y:Math.floor(me.y+f.y),c:1,ch:{}});saveMe();return true},items:()=>world.items,coins:d=>{if(d===undefined)return me.coins|0;if((me.coins|0)+d<0){toast('Мало монет 🪙');return false}me.coins=(me.coins|0)+d;save('pm_me',me);$('#co').textContent=me.coins+'🪙';return true},toast,weather:id=>{world.wx.cur=id;world.wx.auto=0},speed:v=>sp=+v||1,say:t=>talk(String(t)),give:id=>give(id),tp:(l,x,y)=>tp(l,x,y),get me(){return{n:me.n,x:me.x,y:me.y,l:me.l}}};
+const api={sound:id=>playSnd(id),music:id=>playMus(id),stopMusic:()=>stopMus(),anim:(n,ms,e)=>{const f=fdv();me.an={id:Math.random(),d:ms||1000,n,e,t:Date.now()+(ms||1000),tx:(Math.floor(me.x+f.x)+.5)*T,ty:(Math.floor(me.y+f.y)+.5)*T};push()},fx:e=>fx.push({e,x:me.x*T,y:me.y*T-40,t0:performance.now()}),after:(ms,fn)=>setTimeout(()=>{try{fn()}catch(e){toast(e.message)}},ms),facing:()=>tileAt(me.x+fdv().x,me.y+fdv().y),near:ch=>[[1,0],[-1,0],[0,1],[0,-1]].some(([a,b])=>tileAt(me.x+a,me.y+b)==ch),tile:(x,y)=>tileAt(x,y),has:id=>me.inv[id]|0,consume:id=>{id=id||me.sel;if(me.inv[id]>0){me.inv[id]--;if(!me.inv[id]){if(me.sel==id)me.sel='';updHand()}saveMe()}},island:()=>tp('isl'),place:ch=>{if(me.l!='isl'){toast('Строить можно на своём острове');return false}const f=fdv(),x=Math.floor(me.x+f.x),y=Math.floor(me.y+f.y),r=me.island.rows;if(y<1||x<1||y>=r.length-1||x>=r[0].length-1||me.island.portals[x+','+y])return false;r[y]=r[y].slice(0,x)+ch+r[y].slice(x+1);saveMe();return true},chest:()=>{if(me.l!='isl'){toast('Сундук ставится на острове');return false}const f=fdv();(me.island.objs=me.island.objs||[]).push({x:Math.floor(me.x+f.x),y:Math.floor(me.y+f.y),c:1,ch:{}});saveMe();return true},items:()=>world.items,coins:d=>{if(d===undefined)return me.coins|0;if((me.coins|0)+d<0){toast('Мало монет 🪙');return false}me.coins=(me.coins|0)+d;save('pm_me',me);$('#co').textContent=me.coins+'🪙';return true},toast,weather:id=>{world.wx.cur=id;world.wx.auto=0},speed:v=>sp=+v||1,say:t=>talk(String(t)),give:id=>give(id),tp:(l,x,y)=>tp(l,x,y),get me(){return{n:me.n,x:me.x,y:me.y,l:me.l}}};
 function compile(){hooks={};try{hooks=new Function('api',world.code+';return{onJoin:typeof onJoin=="function"?onJoin:0,onPickup:typeof onPickup=="function"?onPickup:0,onTick:typeof onTick=="function"?onTick:0}')(api)}catch(e){toast('Ошибка скрипта: '+e.message)}}
 function hk(n,...a){try{hooks[n]&&hooks[n](...a)}catch(e){toast('Скрипт: '+e.message);if(++hkE>5){hooks={};toast('Скрипты отключены из-за ошибок')}}}
 function applyWorld(w,announce){
@@ -133,19 +133,19 @@ async function publish(){
 }
 
 /* ---------- игра ---------- */
-const L=()=>me.l=='isl'?me.island:world.locs[me.l];
+const L=()=>me.l=='isl'?me.island:me.l=='vis'?(window.visD||{n:'Остров',rows:['1'],portals:{},objs:[],sx:0,sy:0}):world.locs[me.l];
 const tileAt=(x,y)=>{const r=L().rows[Math.floor(y)];return r?r[Math.floor(x)]:undefined};
-const blocked=(x,y)=>{const c=tileAt(x,y);if(c===undefined)return true;const d=world.tiles[c];if(!d||!d.b)return false;if(!d.hb)return true;const fx=x%1,fy=y%1;return fx>=d.hb[0]&&fx<=d.hb[2]&&fy>=d.hb[1]&&fy<=d.hb[3]};
+const blocked=(x,y)=>{if(window.fuB&&fuB(x,y))return true;const c=tileAt(x,y);if(c===undefined)return true;const d=world.tiles[c];if(!d||!d.b)return false;if(!d.hb)return true;const fx=x%1,fy=y%1;return fx>=d.hb[0]&&fx<=d.hb[2]&&fy>=d.hb[1]&&fy<=d.hb[3]};
 function give(id){me.inv[id]=(me.inv[id]||0)+1;save('pm_me',me)}
 function tp(l,x,y){if(l=='isl'){ensureIsl();me.l='isl';me.x=x??me.island.sx;me.y=y??me.island.sy;$('#loc').textContent='🏝 Мой остров';locFx();return}if(!world.locs[l])return;me.l=l;me.x=x;me.y=y;$('#loc').textContent=world.locs[l].n;locFx()}
 let sayT=0,sayS='';function talk(t){const m=/^\*{1,2}\s*(.+?)\s*\*{0,2}$/.exec(t.trim());sayS=m?'\u0001'+m[1]:t;sayT=Date.now()+(m?6000:4000);push()}
-let pT=0;function push(){if(!room)return;const n=Date.now();if(n-pT<90)return;pT=n;room.presence({n:me.n,c:me.c,k:me.k,x:+me.x.toFixed(2),y:+me.y.toFixed(2),l:locKey(),s:Date.now()<sayT?sayS:'',a:me.a||'',e:me.fc||'',ev:Date.now()<evT?evS:null}).catch(()=>{})}
+let pT=0;function push(){if(!room)return;const n=Date.now();if(n-pT<90){if(!window.pQ)window.pQ=setTimeout(()=>{window.pQ=0;push()},100);return}pT=n;room.presence({n:me.n,c:me.c,k:me.k,x:+me.x.toFixed(2),y:+me.y.toFixed(2),l:locKey(),s:Date.now()<sayT?sayS:'',a:me.a||'',e:me.fc||'',ev:Date.now()<evT?evS:null,f:me.f||1,h:window.heldE?heldE():'',an:window.anOut?anOut():null,is:window.isOut?isOut():null}).catch(()=>{})}
 function step(dt){
  let dx=dir.x,dy=dir.y;const m=Math.hypot(dx,dy);
  if(m>.1){me.fd=Math.abs(dx)>Math.abs(dy)?{x:Math.sign(dx),y:0}:{x:0,y:Math.sign(dy)};const s=3.2*sp*dt/Math.max(m,1);const nx=me.x+dx*s,ny=me.y+dy*s;
   if(!blocked(nx,me.y))me.x=nx;if(!blocked(me.x,ny))me.y=ny;me.f=dx<0?-1:dx>0?1:me.f;push();
   const k=Math.floor(me.x)+','+Math.floor(me.y),p=L().portals&&L().portals[k];if(p)tp(...p);
-  const os=L().objs||[];for(let i=os.length-1;i>=0;i--){const o=os[i];if(!o.c&&!o.lt&&Math.abs(o.x+.5-me.x)<.6&&Math.abs(o.y+.5-me.y)<.6&&!editing){const it=world.items.find(a=>a.id==o.i);os.splice(i,1);respawn(o);if(it){give(it.id);api.coins(1);playSnd('pick');hk('onPickup',it)}}}}
+  const os=L().objs||[];for(let i=os.length-1;i>=0;i--){const o=os[i];if(me.l!='vis'&&!o.fu&&!o.c&&!o.lt&&Math.abs(o.x+.5-me.x)<.6&&Math.abs(o.y+.5-me.y)<.6&&!editing){const it=world.items.find(a=>a.id==o.i);os.splice(i,1);respawn(o);if(it){give(it.id);api.coins(1);playSnd('pick');hk('onPickup',it)}}}}
 }
 function respawn(o){const l=me.l;setTimeout(()=>{if(world&&world.locs[l]&&world.locs[l].objs)world.locs[l].objs.push(o)},20000)}
 function pony(x,y,c,k,n,s,f,t,an,o){const e=an?an.n:'';if(e=='eat'||e=='jump')y-=Math.abs(Math.sin(t/110))*14;if(an){if(e=='fish'){cx.strokeStyle='#fff';cx.lineWidth=2;cx.beginPath();cx.moveTo(x+30,y-30);cx.lineTo(an.tx,an.ty);cx.stroke();cx.font='34px sans-serif';cx.textAlign='center';cx.fillText('🎣',x+30,y-8)}else if(an.e){cx.font='28px sans-serif';cx.textAlign='center';cx.fillText(an.e,x,y-92-Math.abs(Math.sin(t/150))*8)}}
@@ -153,7 +153,7 @@ function pony(x,y,c,k,n,s,f,t,an,o){const e=an?an.n:'';if(e=='eat'||e=='jump')y-
  const im=k&&texOf(k,t);
  if(im)cx.drawImage(im,x-32,y-32,64,64);else{cx.fillStyle=c;cx.fillRect(x-26,y-26,52,52);cx.fillStyle='#0003';cx.fillRect(x-26,y+16,52,10);faceDraw(x,y,o&&o.e)}
  {const o2=o||{},ft=o2.e&&texOf('face_'+o2.e,t);if(ft)cx.drawImage(ft,x-32,y-32,64,64);const ac=o2.a&&world.acc&&world.acc.find(q=>q.id==o2.a);if(ac){const at=texOf('acc_'+ac.id,t);if(at)cx.drawImage(at,x-32,y-32,64,64);else{cx.font='34px sans-serif';cx.textAlign='center';cx.fillText(ac.e,x,y-24)}}}
- cx.textAlign='center';cx.font='10px "Press Start 2P",monospace';cx.fillStyle=n=='Tsumych'?'#ffd54a':'#fff';cx.fillText(n,x,y-42);
+ if(o&&o.h){cx.font='26px sans-serif';cx.textAlign='center';cx.fillText(o.h,x+40,y+8+Math.sin(t/260)*3)}cx.textAlign='center';cx.font='10px "Press Start 2P",monospace';cx.fillStyle=n=='Tsumych'?'#ffd54a':'#fff';cx.fillText(n,x,y-42);
  if(s){const rp=s[0]=='\u0001',tx=rp?'* '+n+' '+s.slice(1)+' *':s,ln=[];let cur='';tx.split(' ').forEach(wd=>{if(cur&&(cur+' '+wd).length>26){ln.push(cur);cur=wd}else cur=cur?cur+' '+wd:wd});ln.push(cur);cx.font='10px "Press Start 2P",monospace';const w=Math.max(...ln.map(q=>cx.measureText(q).width))+12,h=ln.length*14+4,tp=y-54-h;cx.fillStyle=rp?'#3a2a66':'#fff';cx.fillRect(x-w/2,tp,w,h);if(rp){cx.strokeStyle='#ff8ad8';cx.lineWidth=2;cx.strokeRect(x-w/2,tp,w,h)}cx.fillStyle=rp?'#ffd6f3':'#000';ln.forEach((q,i)=>cx.fillText(q,x,tp+13+i*14))}
 }
 function draw(t){
@@ -175,8 +175,8 @@ function draw(t){
  }
  cx.font='40px sans-serif';cx.textAlign='center';
  (l.objs||[]).forEach(o=>{if(o.lt)return;const it=world.items.find(a=>a.id==o.i),sc=o.s||1,im=texOf(o.c?'chest':'i_'+o.i,t);if(im){const sz=T*sc;cx.drawImage(im,o.x*T+T/2-sz/2,o.y*T+T-sz,sz,sz)}else{cx.font=(40*sc|0)+'px sans-serif';cx.textAlign='center';cx.fillText(o.c?'🧰':it?it.e:'❓',o.x*T+32,o.y*T+46+(sc-1)*6+Math.sin(t/300+o.x)*3)}});
- const all=[{n:me.n,c:me.c,k:me.k,x:me.x,y:me.y,s:Date.now()<sayT?sayS:'',f:me.f||1,an:me.an&&me.an.t>Date.now()?me.an:null,o:{a:me.a,e:me.fc}}];
- peers.forEach(p=>{const q=p.presence;if(q&&q.l==locKey())all.push({n:q.n,c:q.c,k:q.k,x:+q.x,y:+q.y,s:q.s,f:1,o:{a:q.a,e:q.e},an:(()=>{const v=q.ev,ts=v&&seenT[v.f+v.t];return ts&&Date.now()-ts<2500?{n:'emo',e:v.e}:null})()})});
+ const all=[{n:me.n,c:me.c,k:me.k,x:me.x,y:me.y,s:Date.now()<sayT?sayS:'',f:me.f||1,an:me.an&&me.an.t>Date.now()?me.an:null,o:{a:me.a,e:me.fc,h:heldE()}}];
+ peers.forEach(p=>{const q=p.presence;if(q&&q.l==locKey())all.push({n:q.n,c:q.c,k:q.k,x:+q.x,y:+q.y,s:q.s,f:q.f||1,o:{a:q.a,e:q.e,h:q.h},an:peerAn(q)||(()=>{const v=q.ev,ts=v&&seenT[v.f+v.t];return ts&&Date.now()-ts<2500?{n:'emo',e:v.e}:null})()})});
  const dr=all.map(a=>({y:a.y,f:()=>pony(a.x*T,a.y*T,a.c,a.k,a.n||'?',a.s,a.f,t,a.an,a.o)}));(l.dec||[]).forEach(q=>dr.push({y:q.y+.6,f:()=>drawSpr(texOf('t'+q.t,t)||procTex(q.t),q.x,q.y,q.s||1)}));(l.objs||[]).forEach(o=>{if(o.lt)dr.push({y:o.y+.6,f:()=>drawLamp(o,t)})});dr.sort((a,b)=>a.y-b.y).forEach(d=>d.f());
  drawTop(l,x0,x1,y0,y1,t);drawGhost(t);drawFx(t);cx.restore();drawLight(l,W,H,t,Math.round(ox),Math.round(oy));drawWx(W,H,t);
 }
@@ -211,7 +211,7 @@ async function paint(e,drag){if(!editing||tab!='map')return;const r=cv.getBoundi
 /* ---------- админка ---------- */
 document.querySelectorAll('#adm .tb').forEach(b=>b.onclick=()=>{tab=b.dataset.t;renderAdm()});
 $('#bAdm').onclick=()=>{editing=true;$('#eb').classList.remove('on');$('#adm').classList.add('on');renderAdm()};
-function renderAdm(){if(tab=='lamps')return renderLamps();if(tab=='pl')return renderPl();if(tab=='acts')return renderActs();if(tab=='wx')return renderWx();if(tab=='map')return renderMap();if(tab=='tiles')return renderTiles();if(tab=='loc')return renderLoc();if(tab=='items')return renderItems();if(tab=='tex')return renderTex();if(['tex','snd','menu','mod'].includes(tab))return renderAdmX();if(tab=='mus')return renderMus();
+function renderAdm(){if(tab=='kit')return renderKit();if(tab=='lamps')return renderLamps();if(tab=='pl')return renderPl();if(tab=='acts')return renderActs();if(tab=='wx')return renderWx();if(tab=='map')return renderMap();if(tab=='tiles')return renderTiles();if(tab=='loc')return renderLoc();if(tab=='items')return renderItems();if(tab=='tex')return renderTex();if(['tex','snd','menu','mod'].includes(tab))return renderAdmX();if(tab=='mus')return renderMus();
  document.querySelectorAll('#adm .tb').forEach(b=>b.classList.toggle('sel',b.dataset.t==tab));
  const a=$('#admb');a.innerHTML='';const add=(h)=>{const d=document.createElement('div');d.innerHTML=h;a.appendChild(d);return d};
  if(tab=='map'){
@@ -340,7 +340,7 @@ const DC={'0':'#7ec850','1':'#3a7bd5','2':'#d9b779','3':'#2e7d32','4':'#ff6fae',
 const PAL=['#000000','#ffffff','#7f7f7f','#ff4d4d','#ff9a3c','#ffe14d','#7ee05a','#2e9e4f','#4dd2ff','#3a6bff','#8a4dff','#ff6fcf','#8b5a2b','#d9b779','#5a3b1e','#b0e0ff'];
 const defTiles=()=>({'0':{n:'Трава'},'1':{n:'Вода',b:1},'2':{n:'Дорога'},'3':{n:'Дерево',b:1},'4':{n:'Цветы'},'5':{n:'Стена',b:1},'6':{n:'Портал'},'П':{n:'Пол'},'К':{n:'Крыша'},'Д':{n:'Дверь'}});
 const defItems=()=>[{id:'rod',n:'Удочка',e:'🎣',u:"if(!api.near('1')){api.toast('Встань у воды');return}api.anim('fish',3000);api.after(3000,()=>{if(Math.random()<.6){api.give('fish');api.fx('🐟');api.sound('pick');api.toast('Поймал рыбу!')}else api.toast('Сорвалась…')})"},{id:'fish',n:'Рыба',e:'🐟',u:"api.anim('eat',1200,item.e);api.consume();api.coins(2);api.fx('😋')"},{id:'chest',n:'Сундук',e:'🧰',u:"if(api.chest())api.consume()"},{id:'plank',n:'Блок стены',e:'🧱',tile:'5'}];
-const locKey=()=>me.l=='isl'?'isl:'+(me.uid||(me.uid=Math.random().toString(36).slice(2))):me.l;
+const locKey=()=>me.l=='vis'?window.visK:me.l=='isl'?'isl:'+(me.uid||(me.uid=Math.random().toString(36).slice(2))):me.l;
 const fdv=()=>me.fd||{x:0,y:1};
 const nm=id=>{const i=world.items.find(a=>a.id==id);return i?i.e+i.n:id};
 const iconOf=i=>{const f=world.tex['i_'+i.id];return f&&f.fr[0]?`<img src="${f.fr[0]}" width="28" height="28" style="image-rendering:pixelated;vertical-align:middle">`:i.e};
@@ -365,7 +365,7 @@ function drawLight(l,W,H,t,ox,oy){const dk=l.dark||0,nt=nightAmt(),d=Math.max(dk
   cx.drawImage(lc,0,0,W,H)}
  if(pts.length){cx.save();cx.globalCompositeOperation='lighter';const k=.25+.75*Math.min(1,d/.45);pts.forEach(p=>{const gr=cx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r);gr.addColorStop(0,hexA(p.c,p.a*k*.8));gr.addColorStop(1,hexA(p.c,0));cx.fillStyle=gr;cx.fillRect(p.x-p.r,p.y-p.r,p.r*2,p.r*2)});cx.restore()}}
 function useItem(it){if(it.u){try{new Function('api','item',it.u)(api,it)}catch(e){toast('Ошибка предмета: '+e.message)}}else if(it.tile){if(api.place(it.tile))api.consume(it.id)}}
-function act(){const o=(L().objs||[]).find(o=>o.c&&Math.hypot(o.x+.5-me.x,o.y+.5-me.y)<1.5);if(o)return openChest(o);const it=world.items.find(i=>i.id==me.sel);if(!it||!(me.inv[it.id]>0)){toast('Возьми предмет в 🎒');return}useItem(it)}
+function act(){if(window.addAct&&addAct())return;const o=(L().objs||[]).find(o=>o.c&&Math.hypot(o.x+.5-me.x,o.y+.5-me.y)<1.5);if(o)return openChest(o);const it=world.items.find(i=>i.id==me.sel);if(!it||!(me.inv[it.id]>0)){toast('Возьми предмет в 🎒');return}useItem(it)}
 function openChest(o){const box=$('#chb'),isl=me.l=='isl',key=me.l+o.x+','+o.y;me.taken=me.taken||{};
  const draw=()=>{box.innerHTML='';const row=(t,f)=>{const b=document.createElement('button');b.textContent=t;b.onclick=()=>{f();draw();saveMe()};box.appendChild(b)};
   if(!isl){if(me.taken[key])box.textContent='Пусто';else row('🎁 Забрать всё: '+Object.entries(o.ch||{}).map(([k,v])=>nm(k)+'×'+v).join(', '),()=>{for(const k in o.ch)for(let i=0;i<o.ch[k];i++)give(k);me.taken[key]=1;playSnd('pick')})}
@@ -577,10 +577,117 @@ setInterval(()=>{if($('#intro').style.display!='none')pv(Date.now())},150);
   d.onSnapshot(s=>{if(s.exists&&world){const n=JSON.parse(s.data().json);if(n.v!==world.v&&!(isAdm&&editing))applyWorld(n,true)}},()=>{})}
  if(!w)w=load('pm_world')||defWorld();
  applyWorld(w);fillKinds();
- if(room)room.onPeers(c=>{peers=c.peers.filter(p=>!p.isMe);peers.forEach(p=>{const v=p.presence&&p.presence.ev;if(v&&!seenT[v.f+v.t]){seenT[v.f+v.t]=Date.now();if(v.to&&v.to==me.n){toast(v.e+' '+v.f+' '+v.m);fx.push({e:v.e,x:me.x*T,y:me.y*T-40,t0:performance.now()})}}});$('#on').textContent=(peers.length+1)+'👥'});
+ if(room)room.onPeers(c=>{peers=c.peers.filter(p=>!p.isMe);peers.forEach(p=>{const v=p.presence&&p.presence.ev;if(v&&!seenT[v.f+v.t]){seenT[v.f+v.t]=Date.now();if(v.to&&v.to==me.n){toast(v.e+' '+v.f+' '+v.m);fx.push({e:v.e,x:me.x*T,y:me.y*T-40,t0:performance.now()})}}});$('#on').textContent=(peers.length+1)+'👥';visSync()});
  $('#st').textContent=db?'Онлайн-режим':'Офлайн-режим (без других игроков)';
  pv();
 })();
 $('#go').onclick=async()=>{if(!world)return;try{if(!isAdm&&await sha($('#nm').value.trim().toLowerCase())==AH){setAdmin(true);$('#nm').value='Tsumych';$('#nm').disabled=true;$('#bAL2').style.display='none'}}catch(e){}const nn=($('#nm').value||'Блок').trim().slice(0,12);me.n=isAdm?'Tsumych':(nn.toLowerCase()=='tsumych'?'Игрок':nn);$('#co').textContent=(me.coins|0)+'🪙';if(!world.locs[me.l]){me.l='meadow'}save('pm_me',me);$('#intro').style.display='none';locFx();updHand();push();hk('onJoin',me)};
 requestAnimationFrame(loop);
-</script></body></html>
+</script>
+<script>
+/* ===== ADDON v5: убирать блоки, друзья на острове, анимации других, мебель, готовка, ноша ===== */
+(()=>{
+const eat=(c,sp)=>"api.anim('eat',1200,item.e);api.consume();api.coins("+c+");"+(sp?"api.speed(1.5);api.after(15000,()=>api.speed(1));":"")+"api.fx('😋')";
+const ITEMS=[
+{id:'egg',n:'Яйцо',e:'🥚'},{id:'carrot',n:'Морковь',e:'🥕'},{id:'wheat',n:'Пшеница',e:'🌾'},{id:'mush',n:'Гриб',e:'🍄'},{id:'cheese',n:'Сыр',e:'🧀'},
+{id:'d_omelet',n:'Омлет',e:'🍳',u:eat(4)},{id:'d_grill',n:'Рыба на гриле',e:'🍣',u:eat(6,1)},{id:'d_soup',n:'Грибной суп',e:'🍲',u:eat(7,1)},
+{id:'d_salad',n:'Салат',e:'🥗',u:eat(5,1)},{id:'d_pie',n:'Яблочный пирог',e:'🥧',u:eat(9,1)},{id:'d_juice',n:'Сок',e:'🧃',u:eat(3,1)},{id:'d_pizza',n:'Пицца',e:'🍕',u:eat(12,1)},
+{id:'fish2',n:'Золотая рыбка',e:'🐠',u:eat(8)},{id:'f_arcade',n:'Игровой автомат',e:'🕹',cost:25,fu:1,k:'arcade',u:'api.furn(item)'},{id:'pick',n:'Кирка',e:'⛏',cost:5,u:'api.dig()'},
+{id:'b_path',n:'Дорожка',e:'🟫',cost:2,tile:'2'},{id:'b_water',n:'Пруд',e:'🌊',cost:2,tile:'1'},{id:'b_tree',n:'Дерево',e:'🌳',cost:3,tile:'3'},{id:'b_flower',n:'Цветы',e:'🌸',cost:2,tile:'4'},
+...[['f_bench','Верстак','🔨',15],['f_stove','Плита','♨️',10],['f_table','Стол','🍽',6],['f_chair','Стул','🪑',4],['f_fridge','Холодильник','🧊',12],['f_sink','Раковина','🚰',8],['f_shelf','Полка','📚',5]].map(([id,n,e,cost])=>({id,n,e,cost,fu:1,u:'api.furn(item)'}))];
+const RECIPES=[{n:'Омлет',e:'🍳',i:{egg:2},o:'d_omelet'},{n:'Рыба на гриле',e:'🍣',i:{fish:1},o:'d_grill'},{n:'Грибной суп',e:'🍲',i:{mush:2,carrot:1},o:'d_soup'},{n:'Салат',e:'🥗',i:{carrot:2,apple:1},o:'d_salad'},{n:'Яблочный пирог',e:'🥧',i:{apple:2,wheat:2},o:'d_pie'},{n:'Сок',e:'🧃',i:{apple:3},o:'d_juice'},{n:'Пицца',e:'🍕',i:{wheat:2,cheese:1,mush:1},o:'d_pizza'}];
+const ACTS=[{t:'Танец',e:'💃',an:1},{t:'Смех',e:'😂',an:1},{t:'Сон',e:'😴',fc:'sleep'},{t:'Аплодисменты',e:'👏',an:1},{t:'Конфетти',e:'🎉',an:1},{t:'Сердечко',e:'💖',an:1,tg:1,m:'дарит тебе сердечко'},{t:'Дать пять',e:'🖐',an:1,tg:1,m:'даёт тебе пять'}];
+const ACC=[{id:'glasses',n:'Очки',e:'😎'},{id:'cap',n:'Кепка',e:'🧢'},{id:'phones',n:'Наушники',e:'🎧'},{id:'wreath',n:'Венок',e:'🌸'},{id:'chef',n:'Колпак повара',e:'👨‍🍳'}];
+const hasO=(l,i)=>(l.objs||[]).some(o=>o.i==i);
+function spot(l,k){const w=l.rows[0].length,h=l.rows.length;for(let j=0;j<60;j++){const x=(k*7+3+j*5)%(w-2)+1,y=(k*5+4+j*3)%(h-2)+1;if(l.rows[y][x]=='0'&&!(l.objs||[]).some(o=>o.x==x&&o.y==y))return[x,y]}}
+function mig(w){w.rec=w.rec||JSON.parse(JSON.stringify(RECIPES));const rd=w.items.find(i=>i.id=='rod');if(rd&&(rd.u||'').indexOf('api.fish')<0)rd.u='api.fish()';
+ ITEMS.forEach(i=>{if(!w.items.find(a=>a.id==i.id))w.items.push(i)});
+ ACTS.forEach(a=>{if(!w.acts.find(q=>q.t==a.t))w.acts.push(a)});ACC.forEach(a=>{if(!w.acc.find(q=>q.id==a.id))w.acc.push(a)});
+ if(!w.menu.some(m=>m.c=='api.friends()'))w.menu.push({t:'👥 Друзья и остров',c:'api.friends()'});
+ Object.values(w.locs).filter(l=>!l.isl&&!l.indoor).forEach((l,li)=>{l.objs=l.objs||[];
+  if(!hasO(l,'f_bench')){const p=Object.keys(l.portals||{})[0];if(p){const[px,py]=p.split(',').map(Number);l.objs.push({x:px+1,y:py+1,i:'f_bench',fu:1})}}
+  if(!hasO(l,'f_arcade')){const b=l.objs.find(o=>o.i=='f_bench');if(b)l.objs.push({x:b.x+2,y:b.y,i:'f_arcade',fu:1})}
+  if(!hasO(l,'egg'))['egg','carrot','wheat','mush','cheese','egg','carrot','mush'].forEach((id,k)=>{const p=spot(l,k+li*3);if(p)l.objs.push({x:p[0],y:p[1],i:id})})})}
+const _aw=applyWorld;applyWorld=function(w,a){_aw(w,a);try{mig(world)}catch(e){console.warn(e)}};
+function islFix(){const l=me.island;if(!l)return;l.objs=l.objs||[];if(!hasO(l,'f_bench')){l.objs.push({x:l.sx+2,y:l.sy,i:'f_bench',fu:1});saveMe()}
+ if(!me.starter){me.starter=1;give('pick');for(let i=0;i<4;i++)give('plank');api.coins(20);toast('🎁 Кирка, 4 блока и 20🪙 — для острова!')}}
+const _tp=tp;tp=function(l,x,y){_tp(l,x,y);if(l=='isl')try{islFix()}catch(e){}};
+const fr=()=>{const f=fdv();return[Math.floor(me.x+f.x),Math.floor(me.y+f.y)]};
+window.fuB=(x,y)=>(L().objs||[]).some(q=>q.fu&&Math.floor(q.x)==Math.floor(x)&&Math.floor(q.y)==Math.floor(y));
+window.heldE=()=>{const i=world&&world.items.find(a=>a.id==me.sel);return i&&me.inv[i.id]>0?i.e:''};
+/* убирать блоки и мебель */
+api.dig=()=>{if(me.l!='isl'){toast('Копать можно на своём острове');return}
+ const l=me.island,r=l.rows,[x,y]=fr(),oi=(l.objs||[]).findIndex(o=>!o.c&&!o.lt&&Math.floor(o.x)==x&&Math.floor(o.y)==y);
+ if(oi>=0){const o=l.objs.splice(oi,1)[0];if(o.i)give(o.i);api.fx('📦');playSnd('pick');saveMe();return}
+ const di=(l.dec||[]).findIndex(q=>Math.floor(q.x)==x&&Math.floor(q.y)==y);if(di>=0){l.dec.splice(di,1);api.fx('💨');saveMe();return}
+ if(y<1||x<1||y>=r.length-1||x>=r[0].length-1||(l.portals||{})[x+','+y]||r[y][x]=='0'){toast('Тут нечего убирать');return}
+ const it=world.items.find(i=>i.tile==r[y][x]);if(it)give(it.id);
+ r[y]=r[y].slice(0,x)+'0'+r[y].slice(x+1);api.fx('💥');api.anim('jump',500,'⛏');saveMe()};
+api.furn=it=>{if(me.l!='isl'){toast('Мебель ставится на своём острове');return}const[x,y]=fr(),l=me.island;
+ if(x<1||y<1||y>=l.rows.length-1||x>=l.rows[0].length-1||blocked(x+.5,y+.5)||(l.objs||[]).some(o=>Math.floor(o.x)==x&&Math.floor(o.y)==y)||(l.portals||{})[x+','+y]){toast('Сюда не поставить');return}
+ (l.objs=l.objs||[]).push({x,y,i:it.id,fu:1});api.consume(it.id);saveMe()};
+api.items=()=>world.items.filter(i=>!i.cost);
+/* анимации других игроков */
+const anSeen={};
+window.anOut=()=>me.an&&me.an.t>Date.now()?{id:me.an.id,d:me.an.d,n:me.an.n,e:me.an.e,tx:me.an.tx,ty:me.an.ty}:null;
+window.peerAn=q=>{const a=q.an;if(!a)return null;const k=q.n+a.id;if(!anSeen[k])anSeen[k]=Date.now();return Date.now()-anSeen[k]<a.d?{n:a.n,e:a.e,tx:a.tx,ty:a.ty}:null};
+/* остров: приглашения и гости */
+window.isOut=()=>{if(me.l!='isl'||!me.open||!me.island)return null;const l=me.island,s=JSON.stringify({n:me.n,rows:l.rows,top:l.top,dec:l.dec,sx:l.sx,sy:l.sy,portals:l.portals,objs:(l.objs||[]).filter(o=>!o.c).map(o=>({x:o.x,y:o.y,i:o.i,fu:o.fu,lt:o.lt,s:o.s}))});return s.length<9000?s:null};
+let visS='',miss=0,invSeen={};
+function visit(k,n){const h=peers.map(p=>p.presence).find(q=>q&&q.l==k&&q.is);if(!h){toast('Остров закрыт или хозяин ушёл');return}
+ visS=h.is;window.visD=JSON.parse(h.is);window.visK=k;me.l='vis';me.x=visD.sx;me.y=visD.sy;$('#loc').textContent='🏝 Остров: '+h.n;locFx();push()}
+window.visSync=()=>{if(!world)return;peers.forEach(p=>{const q=p.presence,v=q&&q.ev;if(v&&v.inv&&v.to==me.n&&!invSeen[v.f+v.t]){invSeen[v.f+v.t]=1;ask('🏝 '+v.f+' зовёт на свой остров. Идём? (да)','да').then(a=>a&&visit(v.inv,v.f))}});
+ if(me.l=='vis'){const h=peers.map(p=>p.presence).find(q=>q&&q.l==window.visK&&q.is);if(h){if(h.is!==visS){visS=h.is;window.visD=JSON.parse(h.is)}miss=0}else if(!miss)miss=Date.now();else if(Date.now()-miss>5000){miss=0;toast('Хозяин ушёл домой');tp('isl')}}};
+setInterval(()=>{try{visSync()}catch(e){}},1000);
+api.friends=()=>{const h=$('#host');h.innerHTML='';const b=(t,f)=>{const e=document.createElement('button');e.textContent=t;e.onclick=()=>{f();api.friends()};h.appendChild(e)};
+ if(me.l=='isl')b(me.open?'🔓 Остров открыт (закрыть)':'🔒 Остров закрыт (открыть)',()=>{me.open=!me.open;push()});
+ else b('🏝 На свой остров',()=>{$('#mn').classList.remove('on');tp('isl')});
+ if(me.l=='vis')b('🏠 Уйти на свой остров',()=>{$('#mn').classList.remove('on');tp('isl')});
+ const ps=peers.map(p=>p.presence).filter(q=>q&&q.n);if(!ps.length)h.append('Других игроков онлайн нет');
+ ps.forEach(q=>{if(me.l=='isl')b('📨 Позвать: '+q.n,()=>{me.open=true;evS={f:me.n,t:Date.now(),to:q.n,m:'зовёт на остров',e:'🏝',inv:locKey()};evT=Date.now()+8000;push();toast('Приглашение отправлено: '+q.n)});if(q.is)b('🏝 К '+q.n,()=>{$('#mn').classList.remove('on');visit(q.l,q.n)})})};
+/* станции: верстак, плита, холодильник, стул, раковина */
+function ui(t,fn){const box=$('#chb');$('#ch b').textContent=t;const d=()=>{box.innerHTML='';fn(box,(tx,f)=>{const e=document.createElement('button');e.textContent=tx;e.onclick=()=>{f();d()};box.appendChild(e)})};d();$('#ch').classList.add('on')}
+let fridgeT=0;
+const KM={f_bench:'bench',f_stove:'stove',f_fridge:'fridge',f_chair:'chair',f_sink:'g:tap',f_table:'g:dice',f_shelf:'g:memory',f_arcade:'arcade'};
+const sh=a=>a[Math.random()*a.length|0],alive=()=>$('#ch').classList.contains('on');
+const B=(bx,t,f)=>{const e=document.createElement('button');e.innerHTML=t;e.onclick=f;bx.appendChild(e);return e};
+const D=(bx,t,fs)=>{const e=document.createElement('div');e.textContent=t;e.style.cssText='width:100%;font-size:'+(fs||10)+'px';bx.appendChild(e);return e};
+function mini(t,fn){const bx=$('#chb');bx.innerHTML='';$('#ch b').textContent=t;fn(bx);$('#ch').classList.add('on')}
+const GAMES={
+slots:['🎰','Слоты',(bx,fin)=>{const S=['🍒','🍋','🔔','⭐','7️⃣'],o=D(bx,'❔ ❔ ❔',34);B(bx,'Крутить',()=>{let n=0,r;const iv=setInterval(()=>{r=[sh(S),sh(S),sh(S)];o.textContent=r.join(' ');if(++n>8){clearInterval(iv);fin(r[0]==r[1]&&r[1]==r[2]?10:r[0]==r[1]||r[1]==r[2]||r[0]==r[2]?2:0)}},120)})}],
+coin:['🪙','Орёл/решка',(bx,fin)=>{['🦅 Орёл','🌀 Решка'].forEach((t,i)=>B(bx,t,()=>fin(Math.random()<.5==!i?2:0,'выпало '+(Math.random()<0?'':'монетка'))))}],
+dice:['🎲','Кости',(bx,fin)=>{B(bx,'Бросить',()=>{const a=1+Math.random()*6|0,b=1+Math.random()*6|0;D(bx,'Ты: '+a+'  Соперник: '+b,14);fin(a>b?2:a==b?1:0)})}],
+rps:['✊','Камень-ножницы-бумага',(bx,fin)=>{const E=['✊','✌️','🖐'];E.forEach((e,i)=>B(bx,e,()=>{const c=Math.random()*3|0;D(bx,'Соперник: '+E[c],20);fin(c==i?1:(i-c+3)%3==1?2:0)}))}],
+cups:['🥤','Угадай стакан',(bx,fin)=>{const w=Math.random()*3|0;[0,1,2].forEach(i=>B(bx,'🥤',()=>fin(i==w?3:0,'шарик был под №'+(w+1))))}],
+tap:['⚡','Тапалка',(bx,fin)=>{let n=0,on=0;const b=B(bx,'Старт',()=>{if(!on){on=1;b.textContent='ТАПАЙ! 0';setTimeout(()=>{on=2;b.disabled=true;fin(n>=25?4:n>=15?2:0,n+' тапов за 5с')},5000)}else if(on==1)b.textContent='ТАПАЙ! '+(++n)})}],
+react:['🚦','Реакция',(bx,fin)=>{let t0=0,done=0;const b=B(bx,'Жди зелёного…',()=>{if(done)return;done=1;if(!t0){clearTimeout(tm);return fin(0,'рано!')}const d=Date.now()-t0;fin(d<450?3:d<700?1:0,d+' мс')}),tm=setTimeout(()=>{t0=Date.now();b.textContent='🟢 ЖМИ!';b.style.background='#3c3'},1000+Math.random()*2000)}],
+memory:['🧠','Память',(bx,fin)=>{const C=['🔴','🟢','🔵','🟡'],q=[0,0,0,0].map(()=>Math.random()*4|0),o=D(bx,q.map(i=>C[i]).join(' '),28);let k=0,dn=0;setTimeout(()=>{o.textContent='❔ ❔ ❔ ❔';C.forEach((c,i)=>B(bx,c,()=>{if(dn)return;if(i!=q[k]){dn=1;fin(0,'ошибка')}else if(++k==4){dn=1;fin(4)}}))},2000)}],
+mole:['🔨','Бей крота',(bx,fin)=>{const g=document.createElement('div');g.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:100%';bx.appendChild(g);let hit=0,r=0,m=-1;const bs=[...Array(9)].map((_,i)=>{const e=B(g,'🕳',()=>{if(i==m){hit++;m=-1;e.textContent='💥'}});return e});const iv=setInterval(()=>{if(m>=0)bs[m].textContent='🕳';if(++r>10||!alive()){clearInterval(iv);return r>10&&fin(hit>=6?4:hit>=4?1:0,hit+'/10')}m=Math.random()*9|0;bs[m].textContent='🐹'},650)}],
+hilo:['🃏','Больше/меньше',(bx,fin)=>{const n=1+Math.random()*13|0;D(bx,'Карта: '+n,24);['⬆ Больше','⬇ Меньше'].forEach((t,i)=>B(bx,t,()=>{let m;do m=1+Math.random()*13|0;while(m==n);D(bx,'Выпало: '+m,18);fin((m>n)==!i?2:0)}))}]};
+function play(id){const g=GAMES[id];if(!api.coins(-1))return;mini(g[0]+' '+g[1],bx=>g[2](bx,(k,m)=>{if(k)api.coins(k);api.fx(k?'🎉':'💨');D(bx,(k?'Выигрыш +'+k+'🪙':'Проигрыш')+(m?' · '+m:''),12);B(bx,'🔁 Ещё (1🪙)',()=>play(id))}))}
+api.fish=()=>{if(!api.near('1')){toast('Встань у воды');return}api.anim('fish',9000);toast('Ждём поклёвку…');
+ setTimeout(()=>mini('🎣 Клюёт!',bx=>{const bar=document.createElement('div'),z=document.createElement('div'),m=document.createElement('div');bar.style.cssText='position:relative;width:100%;height:30px;background:#222;border-radius:6px';z.style.cssText='position:absolute;left:38%;width:24%;height:100%;background:#3a3';m.style.cssText='position:absolute;width:8px;height:100%;background:#fff';bar.append(z,m);bx.appendChild(bar);let p=0,t=0,dn=0;const iv=setInterval(()=>{t+=.09;p=50+48*Math.sin(t*2.2);m.style.left=p+'%';if(!alive()){clearInterval(iv);me.an=null}},30);
+  B(bx,'Подсечь!',()=>{if(dn)return;dn=1;clearInterval(iv);me.an=null;if(Math.abs(p-50)<12){const k=Math.random()<.25?'fish2':'fish';give(k);api.fx(nm(k)[0]);playSnd('pick');D(bx,'Поймал: '+nm(k),14)}else D(bx,'Сорвалась…',14);B(bx,'Закрыть',()=>$('#ch').classList.remove('on'))})}),1500+Math.random()*3000)};
+window.addAct=()=>{const it=world.items.find(i=>i.id==me.sel);if(it&&me.inv[it.id]>0&&(it.fu||it.id=='pick'))return false;
+ const o=(L().objs||[]).find(o=>o.fu&&Math.hypot(o.x+.5-me.x,o.y+.5-me.y)<1.7);if(!o)return false;const d=world.items.find(i=>i.id==o.i)||{},k=d.k||KM[o.i]||'decor';
+ if(k=='bench')ui('🔨 Верстак — '+api.coins()+'🪙',(bx,row)=>world.items.filter(i=>i.cost).forEach(i=>row(i.e+' '+i.n+' — '+i.cost+'🪙',()=>{if(api.coins(-i.cost)){give(i.id);playSnd('pick')}})));
+ else if(k=='stove')ui('♨️ Плита',(bx,row)=>world.rec.forEach(r=>{const ok=Object.entries(r.i).every(([q,v])=>me.inv[q]>=v);row((ok?'':'🔒 ')+r.e+' '+r.n+' ← '+Object.entries(r.i).map(([q,v])=>nm(q)+'×'+v).join(' '),()=>{if(!ok){toast('Не хватает продуктов');return}for(const q in r.i)for(let n=0;n<r.i[q];n++)api.consume(q);$('#ch').classList.remove('on');api.anim('jump',1800,'🍳');api.after(1800,()=>{give(r.o);api.fx(r.e);playSnd('pick');toast('Готово: '+r.e+' '+r.n)})})}));
+ else if(k=='fridge'){if(Date.now()<fridgeT)toast('В холодильнике пусто, загляни позже');else{fridgeT=Date.now()+60000;const q=sh(['egg','carrot','cheese','wheat']);give(q);api.fx(nm(q)[0]);toast('Из холодильника: '+nm(q))}}
+ else if(k=='chair'){api.anim('emo',3000,'🪑');api.say('*сидит*')}
+ else if(k=='arcade')mini('🕹 Автомат · 1🪙 за игру',bx=>Object.entries(GAMES).forEach(([id,g])=>B(bx,g[0]+' '+g[1],()=>play(id))));
+ else if(k.slice(0,2)=='g:'&&GAMES[k.slice(2)])play(k.slice(2));
+ else return false;return true};
+const tb=document.createElement('button');tb.className='tb';tb.dataset.t='kit';tb.textContent='Кухня';tb.onclick=()=>{tab='kit';renderAdm()};$('#atb').appendChild(tb);
+window.renderKit=()=>{tabbtn();const a=$('#admb'),ing=world.items.filter(i=>!i.cost&&!/^d_/.test(i.id)).map(i=>i.id+' '+i.e).join(', ');
+ const kinds=[['decor','Декор'],['stove','Плита (готовка)'],['bench','Верстак'],['fridge','Холодильник'],['chair','Стул'],['arcade','Автомат (10 игр)']].concat(Object.entries(GAMES).map(([id,g])=>['g:'+id,'Игра: '+g[1]]));
+ a.innerHTML='<b>🍳 Блюда</b>'+world.rec.map((r,i)=>`<div class="row"><div class="it" style="flex:3">${r.e} ${r.n} <small>${Object.entries(r.i).map(x=>x.join(':')).join(',')}</small></div><button data-rd="${i}">🗑</button></div>`).join('')+
+ `<small>Продукты: ${ing}</small><div class="row"><input id="ke" placeholder="🍰"><input id="kn" placeholder="Название"></div><input id="ki" placeholder="egg:2,fish:1"><input id="kc" type="number" placeholder="Монет за съедение" value="5"><button id="ka">+ Блюдо</button>
+ <b>🪑 Мебель</b>`+world.items.filter(i=>i.fu).map(i=>`<div class="row"><div class="it" style="flex:3">${i.e} ${i.n} <small>${i.cost||0}🪙 ${i.k||KM[i.id]||'decor'}</small></div><button data-fd="${i.id}">🗑</button></div>`).join('')+
+ `<div class="row"><input id="fe" placeholder="🛋"><input id="fn" placeholder="Название"></div><input id="fc" type="number" placeholder="Цена" value="10"><select id="fk">${kinds.map(k=>`<option value="${k[0]}">${k[1]}</option>`).join('')}</select><button id="fa">+ Мебель</button>`;
+ a.querySelectorAll('[data-rd]').forEach(b=>b.onclick=()=>{const r=world.rec.splice(+b.dataset.rd,1)[0];world.items=world.items.filter(i=>i.id!=r.o);renderKit()});
+ a.querySelectorAll('[data-fd]').forEach(b=>b.onclick=()=>{world.items=world.items.filter(i=>i.id!=b.dataset.fd);renderKit()});
+ $('#ka').onclick=()=>{const e=$('#ke').value,n=$('#kn').value,i={};$('#ki').value.split(',').forEach(p=>{const[q,v]=p.split(':');if(q&&world.items.some(x=>x.id==q.trim()))i[q.trim()]=+v||1});if(!e||!n||!Object.keys(i).length){toast('Нужны эмодзи, название и продукты');return}const id='d_'+Date.now().toString(36);world.items.push({id,n,e,u:eat(+$('#kc').value||0,1)});world.rec.push({n,e,i,o:id});toast('Блюдо добавлено — жми 🚀 Выпуск');renderKit()};
+ $('#fa').onclick=()=>{const e=$('#fe').value,n=$('#fn').value;if(!e||!n){toast('Нужны эмодзи и название');return}world.items.push({id:'f_'+Date.now().toString(36),n,e,cost:+$('#fc').value||1,fu:1,k:$('#fk').value,u:'api.furn(item)'});toast('Мебель добавлена — жми 🚀 Выпуск');renderKit()}}
+})();
+</script>
+</body></html>
