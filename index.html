@@ -1192,4 +1192,118 @@ function plText(){const l=L(),X=Math.floor(me.x),Y=Math.floor(me.y),ab=[];if(l.t
 $('#eL').onclick=()=>{ensL();const ids=GL.map(q=>q[0]).concat((L().cl||[]).map(q=>q.id));layer=ids[(ids.indexOf(layer)+1)%ids.length];updEb()};
 </script>
 
+
+<script>
+/* ===== Block Meadow+ : мебель, бумбокс, 3D-звук, анимации, таблички, текстуры ===== */
+(()=>{
+const KD=[[/бумбокс|boombox|радио|магнитол/,'music'],[/кроват|bed|гамак/,'sleep'],[/стул|кресл|chair|диван|скамь|лавк/,'sit'],[/стол|table|прилав/,'table']];
+const DISH=/блюд|dish|суп|soup|пирог|pie|торт|cake|рыба|fish|яблок|apple|еда|food|пицц|pizza/;
+const kindOf=o=>{if(o.sg!==undefined)return'sign';if(!o.i)return'';const it=world.items.find(a=>a.id==o.i);if(!it)return'';const s=(it.id+' '+it.n).toLowerCase();const k=KD.find(([r])=>r.test(s));return k?k[1]:''};
+const near=()=>{let b=null,bd=1.6;(L().objs||[]).forEach(o=>{if(o.lt||o.c)return;const d=Math.hypot(o.x+.5-me.x,o.y+.5-me.y);if(d<bd&&kindOf(o)){bd=d;b=o}});return b};
+/* --- новые анимации персонажа --- */
+const addDN=()=>{if(typeof DN=='undefined')return;Object.assign(DN,{
+ sit:t=>({dx:0,dy:8,r:0,sx:1,sy:.82,al:1.2,ar:1.2}),
+ sleep:t=>({dx:0,dy:14,r:1.45,sx:1,sy:1+Math.sin(t*2)*.03,al:0,ar:0}),
+ dj:t=>{const b=Math.floor(t*4)%2;return{dx:0,dy:-Math.abs(Math.sin(t*8))*8,r:b?.1:-.1,sx:1,sy:1,al:b?2.6:.4,ar:b?.4:2.6}},
+ place:t=>({dx:0,dy:Math.sin(t*10)*3,r:0,sx:1,sy:.95,al:1.5,ar:1.5})})};
+const defs=[['boombox','Бумбокс','📻'],['chair','Стул','🪑'],['bed','Кровать','🛏'],['table','Стол','🪵'],['soup','Суп (блюдо)','🍲'],['sign','Табличка','🪧'],['paint','Картина','🖼']];
+let wk=null;
+setInterval(()=>{if(!world||wk===world)return;wk=world;addDN();defs.forEach(([id,n,e])=>{if(!world.items.find(i=>i.id==id))world.items.push({id,n,e,u:id=='soup'?"api.anim('eat',1200,item.e);api.consume();api.coins(3);api.fx('😋')":''})})},800);
+/* --- бумбокс: состояние и 3D-звук --- */
+const trs=()=>Object.keys(world.mus||{});
+const BX={};let myBx=null;
+function bxToggle(o){const T_=trs();if(!T_.length){toast('Нет треков — сделай их во вкладке Музыка');return}
+ if(!o.on){o.on=1;o.tr=o.tr||T_[0];o.t0=Date.now()}else{const i=T_.indexOf(o.tr)+1;if(i>=T_.length){o.on=0}else{o.tr=T_[i];o.t0=Date.now()}}
+ toast(o.on?'📻 '+o.tr:'📻 выкл');if(o.on)api.anim('dj',2500);syncBx()}
+function syncBx(){const o=(L().objs||[]).find(o=>o.on&&kindOf(o)=='music'&&Math.hypot(o.x+.5-me.x,o.y+.5-me.y)<30);myBx=o?{l:locKey(),x:o.x,y:o.y,tr:o.tr,t0:o.t0}:null;try{push()}catch(e){}}
+setInterval(()=>{if(typeof room!='undefined'&&room&&!room.__w){room.__w=1;const p=room.presence.bind(room);room.presence=d=>p(Object.assign(d,{bx:myBx}))}},1000);
+const walls=(x0,y0,x1,y1)=>{let n=0;const k=Math.ceil(Math.hypot(x1-x0,y1-y0)*2);for(let i=1;i<k;i++){const x=x0+(x1-x0)*i/k,y=y0+(y1-y0)*i/k,c=tileAt(x,y),d=c&&world.tiles[c];if(d&&d.b&&!(d.key&&0))n+=.5}return n};
+const R=10;
+function sources(){if(!world||$('#intro').style.display!='none')return[];const a=[],lk=locKey();
+ (L().objs||[]).forEach(o=>{if(o.on&&kindOf(o)=='music')a.push({id:'o'+lk+o.x+','+o.y,x:o.x+.5,y:o.y+.5,tr:o.tr,t0:o.t0})});
+ (typeof peers!='undefined'?peers:[]).forEach(p=>{const q=p.presence&&p.presence.bx;if(q&&q.l==lk)a.push({id:'p'+q.x+','+q.y+q.l,x:q.x+.5,y:q.y+.5,tr:q.tr,t0:q.t0})});return a}
+function ctx(){AC=AC||new AudioContext();AC.state=='suspended'&&AC.resume();return AC}
+const chain={};
+setInterval(()=>{try{const S=sources(),ids={};S.forEach(s=>ids[s.id]=1);
+ for(const k in chain)if(!ids[k]){chain[k].g.disconnect();delete chain[k]}
+ if(!S.length)return;const A=ctx(),now=A.currentTime;
+ S.forEach(s=>{const m=world.mus&&world.mus[s.tr];if(!m)return;let c=chain[s.id];
+  if(!c){const g=A.createGain(),f=A.createBiquadFilter(),p=A.createStereoPanner();f.type='lowpass';g.connect(f);f.connect(p);p.connect(A.destination);c=chain[s.id]={g,f,p,last:-1}}
+  const d=Math.hypot(s.x-me.x,s.y-me.y),w=walls(me.x,me.y,s.x,s.y),vol=Math.pow(Math.max(0,1-d/R),2)*Math.pow(.55,w);
+  c.g.gain.setTargetAtTime(vol,now,.08);c.f.frequency.setTargetAtTime(Math.max(300,16000/(1+w*3)/(1+d/4)),now,.1);c.p.pan.setTargetAtTime(Math.max(-1,Math.min(1,(s.x-me.x)/5)),now,.1);
+  const sm=30000/m.bpm,len=m.steps.length;let st=Math.floor((Date.now()-s.t0)/sm);if(c.last<0)c.last=st-1;
+  for(let i=c.last+1;i<=st+2&&i<=c.last+8;i++){const at=now+Math.max(0,(s.t0+i*sm-Date.now())/1000);(m.steps[i%len]||[]).forEach(r=>{const o=A.createOscillator(),e=A.createGain();o.type=m.w;o.frequency.value=mf(r);e.gain.setValueAtTime(m.v,at);e.gain.exponentialRampToValueAtTime(.001,at+sm/1000*.9);o.connect(e);e.connect(c.g);o.start(at);o.stop(at+sm/1000)});c.last=i}
+  if(vol>.05&&typeof fx!='undefined'&&Math.random()<.25)fx.push({e:'🎵',x:s.x*T+(Math.random()-.5)*30,y:s.y*T-30,t0:performance.now()})})}catch(e){}},120);
+/* --- шаги по типу блока --- */
+let sl=0;setInterval(()=>{try{if(!world||Date.now()-(me.mvT||0)>200||$('#intro').style.display!='none')return;const c=tileAt(me.x,me.y),A=ctx(),n=A.currentTime,o=A.createOscillator(),g=A.createGain();o.type=c=='1'?'sine':c=='2'?'square':'triangle';o.frequency.setValueAtTime(c=='1'?500:c=='2'?140:90,n);o.frequency.exponentialRampToValueAtTime(40,n+.07);g.gain.setValueAtTime(.04,n);g.gain.exponentialRampToValueAtTime(.001,n+.08);o.connect(g);g.connect(A.destination);o.start();o.stop(n+.09)}catch(e){}},330);
+/* --- взаимодействия --- */
+const _act=act;act=function(){const o=near();if(o){const k=kindOf(o);
+ if(k=='music'){bxToggle(o);return}
+ if(k=='sit'||k=='sleep'){me.x=o.x+.5;me.y=o.y+(k=='sit'?.7:.6);api.anim(k,3e5);toast(k=='sit'?'🪑 Сидишь (двигайся, чтобы встать)':'💤 Спишь');return}
+ if(k=='table'){const it=world.items.find(i=>i.id==me.sel);
+  if(it&&me.inv[it.id]>0&&DISH.test((it.id+it.n).toLowerCase())&&!o.dish){api.consume(it.id);o.dish=it.id;api.anim('place',700);api.sound('pick');return}
+  if(o.dish){const d=world.items.find(i=>i.id==o.dish);o.dish=null;api.anim('eat',1500,d?d.e:'🍽');api.coins(2);api.fx('😋');return}}
+ if(k=='sign'&&me.l=='isl'&&!me.sel){const t=prompt('Текст таблички:',o.sg||'');if(t!=null)o.sg=t.slice(0,60);return}}
+ return _act.apply(this,arguments)};
+/* --- рисование поверх мира: текст табличек, блюда на столах --- */
+const _df=drawFx;drawFx=function(t){try{(L().objs||[]).forEach(o=>{if(o.lt||o.c)return;
+ if(o.sg!==undefined&&o.sg!==''){cx.font='9px "Press Start 2P",monospace';cx.textAlign='center';const s=String(o.sg).slice(0,14);cx.fillStyle='#000a';cx.fillRect(o.x*T+32-s.length*4.5-3,o.y*T-4,s.length*9+6,14);cx.fillStyle='#fff';cx.fillText(s,o.x*T+32,o.y*T+7)}
+ if(o.dish){const d=world.items.find(i=>i.id==o.dish),im=texOf('i_'+o.dish,t);if(im)cx.drawImage(im,o.x*T+16,o.y*T+4,32,32);else{cx.font='28px sans-serif';cx.textAlign='center';cx.fillText(d?d.e:'🍽',o.x*T+32,o.y*T+30)}}})}catch(e){}
+ return _df(t)};
+/* --- редактор текстур: добавить таблички/сундук/блюда/мебель в список --- */
+const _ra=renderAdmX;renderAdmX=function(){_ra.apply(this,arguments);try{const s=$('#tid');if(!s)return;['sign','chest'].forEach(id=>{if(![...s.options].some(o=>o.value==id)){const op=document.createElement('option');op.textContent=id;s.appendChild(op);if(id==TX.id)s.value=id}})}catch(e){}};
+})();
+</script>
+
+<script>
+/* ===== Импорт музыки (mp3/wav/ogg/m4a) -> 8-бит трек, до 5 минут ===== */
+(()=>{
+/* PCM -> 8-бит трек (12 строк = 12 нот одной октавы) */
+async function audioToTrack(mono,sr,bpm,onp){
+ const f=Math.max(1,Math.round(sr/11025)),n=Math.floor(mono.length/f),x=new Float32Array(n);
+ for(let i=0;i<n;i++){let s=0;for(let j=0;j<f;j++)s+=mono[i*f+j];x[i]=s/f}
+ const r=sr/f,W=2048,hann=new Float32Array(W);for(let i=0;i<W;i++)hann[i]=.5-.5*Math.cos(2*Math.PI*i/(W-1));
+ const fr=[];for(let m=48;m<=83;m++)fr.push({pc:m%12,k:2*Math.cos(2*Math.PI*440*Math.pow(2,(m-69)/12)/r)});
+ const sd=60/bpm/2,N=Math.min(1500,Math.ceil(n/r/sd)),ch=[],rm=[],buf=new Float32Array(W);let mr=1e-9;
+ for(let s=0;s<N;s++){const c=Math.floor((s+.5)*sd*r)-W/2;let e=0;
+  for(let i=0;i<W;i++){const v=(x[c+i]||0)*hann[i];buf[i]=v;e+=v*v}
+  const rms=Math.sqrt(e/W);rm.push(rms);mr=Math.max(mr,rms);
+  const cp=new Float32Array(12);
+  for(const q of fr){let a=0,b=0;for(let i=0;i<W;i++){const t=buf[i]+q.k*a-b;b=a;a=t}cp[q.pc]+=Math.sqrt(Math.max(0,a*a+b*b-q.k*a*b))}
+  ch.push(cp);if(onp&&s%30==0){onp(s/N);await new Promise(o=>setTimeout(o))}}
+ const steps=ch.map((cp,s)=>{if(rm[s]<mr*.1)return[];let t=0;for(let i=1;i<12;i++)if(cp[i]>cp[t])t=i;
+  const o=[11-t];let u=-1;for(let i=0;i<12;i++){const d=Math.min((i-t+12)%12,(t-i+12)%12);if(d>1&&cp[i]>cp[t]*.7&&(u<0||cp[i]>cp[u]))u=i}
+  if(u>=0)o.push(11-u);return o});
+ return{bpm,w:'square',v:.1,steps}}
+
+const MAXS=300;
+async function importAudio(file){const st=$('#mimp');
+ const say=t=>{if(st)st.textContent=t};
+ try{say('Читаю файл…');AC=AC||new AudioContext();
+  const buf=await AC.decodeAudioData(await file.arrayBuffer());
+  let len=buf.length,cut=false;if(buf.duration>MAXS){len=Math.floor(MAXS*buf.sampleRate);cut=true}
+  const mono=new Float32Array(len),nc=buf.numberOfChannels;
+  for(let c=0;c<nc;c++){const d=buf.getChannelData(c);for(let i=0;i<len;i++)mono[i]+=d[i]/nc}
+  const bpm=Math.min(240,Math.max(60,+($('#mbpi')||{}).value||150));
+  const tr=await audioToTrack(mono,buf.sampleRate,bpm,p=>say('Конвертирую в 8 бит… '+Math.round(p*100)+'%'));
+  tr.w=($('#mwi')||{}).value||'square';
+  let id=file.name.replace(/\.[^.]+$/,'').replace(/[^\wа-яё-]+/gi,'_').slice(0,18)||'music',k=id,i=1;while(world.mus[k])k=id+'_'+(++i);
+  const json=JSON.stringify(tr).length;
+  if(json>120000){say('Трек слишком большой для мира');return}
+  world.mus[k]=tr;MID=k;renderMus();toast('🎵 '+k+': '+Math.round(len/buf.sampleRate)+' с'+(cut?' (обрезано до 5 минут)':''));
+ }catch(e){say('Не удалось прочитать файл: '+(e&&e.message||'формат не поддерживается'))}}
+const _rm=renderMus;renderMus=function(){
+ const real=world.mus[MID],long=real&&real.steps.length>32;
+ if(long)world.mus[MID]={bpm:real.bpm,w:real.w,v:real.v,steps:real.steps.slice(0,32)};
+ _rm.apply(this,arguments);
+ if(long){world.mus[MID]=real;const m=real;
+  $('#mwv').onchange=e=>m.w=e.target.value;$('#mbp').onchange=e=>m.bpm=Math.min(240,Math.max(60,+e.target.value||120));
+  $('#mlen').textContent=m.steps.length+' шагов ≈ '+Math.round(m.steps.length*30/m.bpm)+' с';$('#mlen').onclick=()=>toast('Импортированный трек: сетка показывает только первые 32 шага');
+  const gr=$('#gr');if(gr)gr.insertAdjacentHTML('beforebegin','<div style="opacity:.7">🎞 Импортированный трек ('+m.steps.length+' шагов). Показаны первые 32.</div>')}
+ const a=$('#admb'),row=document.createElement('div');
+ row.innerHTML='<div style="margin-top:6px">📁 Загрузить музыку → 8 бит (до 5 мин)</div><div class="row"><select id="mwi"><option>square</option><option>triangle</option><option>sawtooth</option><option>sine</option></select><input id="mbpi" type="number" min="60" max="240" value="150" title="BPM"></div><label class="tb" style="display:block;text-align:center;padding:12px;background:#3b3760;border:2px solid #5a5590;border-radius:6px">Выбрать mp3/wav/ogg<input id="mfi" type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a" style="display:none"></label><div id="mimp" style="opacity:.8"></div>';
+ a.insertBefore(row,a.children[1]);
+ $('#mfi').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)importAudio(f)}};
+})();
+</script>
 </body></html>
