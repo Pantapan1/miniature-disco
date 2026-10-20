@@ -1054,4 +1054,81 @@ async function importPic(f,mxs){const mx=mxs||Math.min(64,Math.max(8,+await ask(
 [['zn','Зоны'],['hist','История']].forEach(([k,n])=>{const b=document.createElement('button');b.className='tb';b.dataset.t=k;b.textContent=n;b.onclick=()=>{tab=k;renderAdm()};$('#atb').appendChild(b)});
 </script>
 
+<script>
+/* ===== v10: скелетные анимации для действий ===== */
+const SKB=['dx','dy','r','sx','sy','al','ar','ll','lr'],SK0={dx:0,dy:0,r:0,sx:1,sy:1,al:.12,ar:.12,ll:0,lr:0};
+const SKS=[['dx','Торс X',-30,30,1],['dy','Торс Y',-30,30,1],['r','Торс наклон',-1.5,1.5,.05],['sx','Ширина',.6,1.4,.02],['sy','Высота',.6,1.4,.02],['al','Рука левая',-3.2,3.2,.05],['ar','Рука правая',-3.2,3.2,.05],['ll','Нога левая',-1.5,1.5,.05],['lr','Нога правая',-1.5,1.5,.05]];
+let SKA=null,SKI='',SKTm=0,SKP=0,SKH=null,SKW=0;
+function evalSk(a,el,w){const k=w&&a.kf2?a.kf2:a.kf,n=k.length;if(!n)return{...SK0};let t=a.loop?el%a.len:Math.min(el,a.len);if(n==1)return{...SK0,...k[0]};
+ const i=k.findIndex(q=>q.t>t);let A,B,ta,tb;
+ if(i<0){A=k[n-1];if(!a.loop)return{...SK0,...A};B=k[0];ta=A.t;tb=B.t+a.len}
+ else if(i==0){if(!a.loop)return{...SK0,...k[0]};A=k[n-1];B=k[0];ta=A.t-a.len;tb=B.t}
+ else{A=k[i-1];B=k[i];ta=A.t;tb=B.t}
+ let u=(t-ta)/(tb-ta||1);if(a.ease)u=(1-Math.cos(u*Math.PI))/2;const o={};SKB.forEach(b=>{const x=A[b]??SK0[b],y=B[b]??SK0[b];o[b]=x+(y-x)*u});return o}
+function regSk(){if(!world)return;world.sk=world.sk||{};for(const id in world.sk)[0,1].forEach(w=>{const key=id+(w?'~':'');DN[key]=t=>{const a=world.sk[id];if(!a)return{...SK0};const A=SKA;return evalSk(a,A&&A.n==key?(Date.now()-(A.s0||(A.t-A.d)))/1000:t,w)}})}
+function pairFor(nm){if(!nm)return null;const now=Date.now(),m=me.an;if(m&&m.pt==nm&&m.t>now&&me.n!=nm)return{n:m.n+'~',t:m.t,d:m.d,e:'',s0:m.t-m.d};
+ for(const p of peers){const q=p.presence;if(q&&q.an&&q.an.pt==nm&&q.n!=nm){const r=peerAn(q);if(r)return{n:r.n+'~',t:0,d:r.d,s0:r.s0,e:''}}}return null}
+{const o=window.anOut;window.anOut=()=>{const r=o();if(r&&me.an&&me.an.pt)r.pt=me.an.pt;return r}}
+{const o=pony;pony=function(x,y,c,k,n,s,f,t,an,q){if(!an)an=pairFor(n)||an;SKA=an;return o(x,y,c,k,n,s,f,t,an,q)}}
+const SKSN={};{const o=window.peerAn;window.peerAn=q=>{const r=o(q);if(r&&q.an){const k=q.n+q.an.id;r.s0=SKSN[k]||(SKSN[k]=Date.now());r.d=q.an.d}return r}}
+{const o=api.anim;api.anim=(n,ms,e)=>{const a=world.sk&&world.sk[n];if(a&&!a.loop)ms=Math.round(a.len*1000)+300;o(n,ms,e);if(a&&a.pair&&me.an){let b=null,bd=3;peers.forEach(p=>{const q=p.presence;if(!q||q.l!=locKey())return;const d=Math.hypot(q.x-me.x,q.y-me.y);if(d<bd){bd=d;b=q.n}});if(b){me.an.pt=b;push()}}}}
+{const o=applyWorld;applyWorld=function(w,an){o(w,an);try{regSk()}catch(e){}}}
+/* тело с ногами-костями (если у позы есть ll/lr) */
+function danceBody(x,y,k,c,tt,P){cx.fillStyle='#0004';cx.fillRect(x-26,y+24,52,8);cx.save();cx.translate(x+P.dx,y+P.dy);cx.rotate(P.r);cx.scale(P.sx,P.sy);cx.translate(-x,-y);
+ const col=k?skinCol(k):c;
+ if(P.ll!==undefined){[[-1,P.ll],[1,P.lr]].forEach(([sg,a])=>{cx.save();cx.translate(x+sg*11,y+20);cx.rotate(sg*a);cx.fillStyle=col;cx.fillRect(-6,0,12,22);cx.fillStyle='#0006';cx.fillRect(-6,0,12,22);cx.fillStyle='#0008';cx.fillRect(-7,18,14,6);cx.restore()})}
+ else{const f1=Math.max(0,Math.sin(tt*(P.fs===undefined?8:P.fs)))*7,f2=Math.max(0,-Math.sin(tt*(P.fs===undefined?8:P.fs)))*7;cx.fillStyle='#0007';cx.fillRect(x-18,y+22-f1,14,8);cx.fillRect(x+4,y+22-f2,14,8)}
+ [[-1,P.al],[1,P.ar]].forEach(([sg,a])=>{cx.save();cx.fillStyle=col;cx.translate(x+sg*27,y-6);cx.rotate(sg*a);cx.fillRect(-5,0,10,26);cx.fillStyle='#0003';cx.fillRect(-5,20,10,6);cx.restore()})}
+/* редактор */
+const SKY=38,trk=a=>SKW&&a.pair?a.kf2:a.kf,skOx=a=>a.pair?(SKW?90:30):60;
+const skPose=()=>evalSk(world.sk[SKI],SKTm,SKW);
+function skKey(a){const K=trk(a),t=Math.round(SKTm*20)/20;let q=K.find(k=>Math.abs(k.t-t)<.03);if(!q){q={t,...skPose()};K.push(q);K.sort((x,y)=>x.t-y.t)}return q}
+function skSet(b,v){skKey(world.sk[SKI])[b]=v}
+function skHandles(P,X0){const R=(px,py)=>{const co=Math.cos(P.r),si=Math.sin(P.r),X=px*P.sx,Y=py*P.sy;return[X0+P.dx+X*co-Y*si,SKY+P.dy+X*si+Y*co]};
+ return[...[[-1,'al'],[1,'ar']].map(([sg,b])=>{const a=P[b];return[b,...R(sg*27-sg*26*Math.sin(a),-6+26*Math.cos(a)),sg,27,-6]}),
+ ...[[-1,'ll'],[1,'lr']].map(([sg,b])=>{const a=P[b];return[b,...R(sg*11-sg*22*Math.sin(a),20+22*Math.cos(a)),sg,11,20]}),['t',...R(0,0)]]}
+function skUI(){const a=world.sk[SKI];if(!a)return;const P=skPose(),K=trk(a);SKS.forEach(([b])=>{const e=$('#sl_'+b);if(e)e.value=P[b]});$('#sktv').textContent=SKTm.toFixed(2)+' / '+a.len+' с';$('#skt').value=SKTm/a.len*1000;
+ const m=$('#skm');m.innerHTML=K.map((k,i)=>`<button data-j="${i}" class="${Math.abs(k.t-SKTm)<.03?'sel':''}" style="padding:5px">${k.t.toFixed(2)}</button>`).join('');m.querySelectorAll('[data-j]').forEach(b=>b.onclick=()=>{SKTm=K[+b.dataset.j].t;SKP=0;skUI()})}
+function renderSk(){tabbtn();const a=$('#admb'),S=world.sk=world.sk||{},ids=Object.keys(S);if(!S[SKI])SKI=ids[0]||'';const an=S[SKI];if(!an||!an.pair)SKW=0;
+ a.innerHTML=`<b>🦴 Скелетные анимации</b><small>Рисовать не надо: двигаешь кости (торс, руки, ноги), ставишь позы на шкале времени — игра плавно переходит между ними. Потом выбери анимацию у кнопки на вкладке «Действия».</small><div class="row"><select id="ski">${ids.map(i=>`<option value="${i}" ${i==SKI?'selected':''}>${(S[i].pair?'🤝 ':'')+S[i].n}</option>`).join('')}</select><button id="skn">+ новая</button>${an?'<button id="skd">🗑</button>':''}</div>`+(an?`${an.pair?`<div class="row"><button data-w="0" class="${SKW?'':'sel'}">🙂 Игрок 1</button><button data-w="1" class="${SKW?'sel':''}">🤝 Партнёр</button></div>`:''}<canvas id="skc" width="360" height="240" style="width:360px;max-width:100%;align-self:center;background:#2b2842;border-radius:8px;touch-action:none"></canvas><small>Тяни за точки: кисть — рука, ступня — нога, центр — сдвиг торса.${an.pair?' Редактируешь: '+(SKW?'партнёра (справа)':'игрока 1 (слева)'):''}</small>
+ <div class="row"><button id="skp">${SKP?'⏸':'▶'}</button><input id="skt" type="range" min="0" max="1000" value="0" style="flex:4"><span id="sktv" style="flex:3;text-align:right"></span></div><div id="skm" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+ <div class="row"><button id="ska">➕ Ключ здесь</button><button id="skx">🗑 Ключ</button></div>
+ <b>Поза на этой секунде</b>${SKS.map(([b,n,mi,ma,st])=>`<div>${n}</div><input id="sl_${b}" type="range" min="${mi}" max="${ma}" step="${st}">`).join('')}
+ <b>Настройки</b><input id="skname" value="${an.n}" placeholder="Название">Длина, сек<input id="sklen" type="number" min="0.3" max="10" step="0.1" value="${an.len}"><label><input type="checkbox" id="skl" ${an.loop?'checked':''}> Повторять по кругу</label><label><input type="checkbox" id="ske" ${an.ease?'checked':''}> Плавные переходы</label><label><input type="checkbox" id="skpr" ${an.pair?'checked':''}> 🤝 Парная (второй персонаж — ближайший игрок)</label>`:'<small>Создай первую анимацию кнопкой «+ новая».</small>');
+ $('#ski').onchange=e=>{SKI=e.target.value;SKTm=0;SKP=0;SKW=0;renderSk()};
+ $('#skn').onclick=async()=>{const n=await ask('Название анимации (Взмах, Объятия…)');if(!n)return;const id='sk_'+Date.now().toString(36);S[id]={n,len:1.2,loop:1,ease:1,kf:[{t:0,...SK0},{t:.6,...SK0,ar:2.7,r:.08},{t:1.2,...SK0}]};SKI=id;SKTm=0;SKW=0;regSk();renderSk()};
+ if(!an)return;
+ $('#skd').onclick=()=>{delete S[SKI];delete DN[SKI];delete DN[SKI+'~'];SKI='';renderSk()};
+ a.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>{SKW=+b.dataset.w;SKP=0;renderSk()});
+ $('#skp').onclick=()=>{SKP=!SKP;$('#skp').textContent=SKP?'⏸':'▶'};
+ $('#skt').oninput=e=>{SKTm=e.target.value/1000*an.len;SKP=0;$('#skp').textContent='▶';skUI()};
+ $('#ska').onclick=()=>{skKey(an);skUI()};
+ $('#skx').onclick=()=>{const K=trk(an),i=K.findIndex(k=>Math.abs(k.t-SKTm)<.03);if(i>=0&&K.length>1){K.splice(i,1);skUI()}};
+ SKS.forEach(([b])=>$('#sl_'+b).oninput=e=>{skSet(b,+e.target.value);SKP=0;skUI()});
+ $('#skname').oninput=e=>an.n=e.target.value||'Анимация';
+ $('#sklen').onchange=e=>{const L=Math.min(10,Math.max(.3,+e.target.value||1));an.len=L;[an.kf,an.kf2||[]].forEach(K=>K.forEach(k=>k.t=Math.min(k.t,L)));SKTm=Math.min(SKTm,L);skUI()};
+ $('#skl').onchange=e=>an.loop=e.target.checked?1:0;$('#ske').onchange=e=>an.ease=e.target.checked?1:0;
+ $('#skpr').onchange=e=>{an.pair=e.target.checked?1:0;if(an.pair&&!an.kf2)an.kf2=JSON.parse(JSON.stringify(an.kf));SKW=0;renderSk()};
+ const c=$('#skc');
+ c.onpointerdown=e=>{const r=c.getBoundingClientRect(),px=(e.clientX-r.left)/r.width*120,py=(e.clientY-r.top)/r.height*80,hs=skHandles(skPose(),skOx(an));let best=null,bd=14;hs.forEach(h=>{const d=Math.hypot(h[1]-px,h[2]-py);if(d<bd){bd=d;best=h}});SKH=best;if(best){c.setPointerCapture(e.pointerId);SKP=0;$('#skp').textContent='▶'}};
+ c.onpointermove=e=>{if(!SKH)return;const r=c.getBoundingClientRect(),px=(e.clientX-r.left)/r.width*120,py=(e.clientY-r.top)/r.height*80,P=skPose(),b=SKH[0],ox=skOx(an);
+  if(b=='t'){skSet('dx',Math.max(-30,Math.min(30,px-ox)));skSet('dy',Math.max(-30,Math.min(30,py-SKY)))}
+  else{const co=Math.cos(-P.r),si=Math.sin(-P.r),X=px-ox-P.dx,Y=py-SKY-P.dy,lx=(X*co-Y*si)/P.sx,ly=(X*si+Y*co)/P.sy,sg=SKH[3],vx=lx-SKH[4],vy=ly-SKH[5];skSet(b,Math.round(Math.atan2(-sg*vx,vy)*20)/20)}
+  skUI()};
+ c.onpointerup=c.onpointercancel=()=>SKH=null;
+ const tick=()=>{if(tab!='sk'||$('#skc')!==c)return;const an2=world.sk[SKI];if(!an2)return;if(SKP){SKTm+=1/60;if(SKTm>an2.len){if(an2.loop)SKTm=0;else{SKTm=an2.len;SKP=0;$('#skp').textContent='▶'}}$('#skt').value=SKTm/an2.len*1000;$('#sktv').textContent=SKTm.toFixed(2)+' / '+an2.len+' с'}
+  const g=c.getContext('2d');g.imageSmoothingEnabled=false;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,360,240);g.scale(3,3);const P1=evalSk(an2,SKTm,0),sv=cx,now=performance.now();cx=g;DN.__pv=()=>P1;
+  try{if(an2.pair){const P2=evalSk(an2,SKTm,1);DN.__pv2=()=>P2;pony(30,SKY,me.c,me.k,'','',1,now,{n:'__pv'},{a:me.a,e:me.fc||'',h:''});pony(90,SKY,'#9ed0ff',null,'','',1,now,{n:'__pv2'},{a:'',e:'',h:''})}else pony(60,SKY,me.c,me.k,'','',1,now,{n:'__pv'},{a:me.a,e:me.fc||'',h:''})}catch(e){}cx=sv;
+  skHandles(skPose(),skOx(an2)).forEach(h=>{g.fillStyle=h[0]==(SKH&&SKH[0])?'#fff':'#ff8ad8';g.strokeStyle='#000';g.lineWidth=1;g.beginPath();g.arc(h[1],h[2],3.5,0,7);g.fill();g.stroke()});
+  requestAnimationFrame(tick)};
+ skUI();tick()}
+{const o=renderAdm;renderAdm=function(){if(tab=='sk')return renderSk();return o()}}
+{const b=document.createElement('button');b.className='tb';b.dataset.t='sk';b.textContent='🦴 Скелет';b.onclick=()=>{tab='sk';renderAdm()};$('#atb').appendChild(b)}
+/* выбор скелетной анимации в редакторе действий */
+{const o=renderActs;renderActs=function(){o();const b=$('#as');if(!b)return;const x=AI>=0?world.acts[AI]:{},S=world.sk||{};
+ b.insertAdjacentHTML('beforebegin',`<div>🦴 Анимация действия (🤝 парные — включи «На ближайшего игрока»)</div><select id="adn"><option value="">обычная (прыжок)</option>${Object.keys(S).map(i=>`<option value="${i}" ${x.dn==i?'selected':''}>🦴 ${(S[i].pair?'🤝 ':'')+S[i].n}</option>`).join('')}${DANCES.map(([d,e,t])=>`<option value="${d}" ${x.dn==d?'selected':''}>${e} ${t}</option>`).join('')}</select>`);
+ const f=b.onclick;b.onclick=()=>{const dv=$('#adn').value,i=AI>=0?AI:world.acts.length;f();const q=world.acts[i];if(q){if(dv)q.dn=dv;else delete q.dn}}}}
+try{regSk()}catch(e){}
+</script>
+
 </body></html>
