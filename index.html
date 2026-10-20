@@ -173,12 +173,12 @@ function draw(t){
   if(c==5){cx.fillStyle='#6d4c41';cx.fillRect(px,py+T-6,T,6)}
   if(c==6){cx.fillStyle='#b388ff';cx.beginPath();cx.arc(px+16,py+16,10+Math.sin(t/200)*2,0,7);cx.fill()}cx.restore();
  }
- drawEdges(l,x0,x1,y0,y1);cx.font='40px sans-serif';cx.textAlign='center';
+ drawEdges(l,x0,x1,y0,y1);if(window.drawCL){drawRotG(l,x0,x1,y0,y1,t);drawCL(l,x0,x1,y0,y1,t,0)}cx.font='40px sans-serif';cx.textAlign='center';
  (l.objs||[]).forEach(o=>{if(o.lt)return;const it=world.items.find(a=>a.id==o.i),sc=o.s||1,im=texOf(o.c?'chest':o.sg!==undefined?'sign':'i_'+o.i,t);if(im){const sz=T*sc;cx.drawImage(im,o.x*T+T/2-sz/2,o.y*T+T-sz,sz,sz)}else{cx.font=(40*sc|0)+'px sans-serif';cx.textAlign='center';cx.fillText(o.c?'🧰':o.sg!==undefined?'🪧':it?it.e:'❓',o.x*T+32,o.y*T+46+(sc-1)*6+Math.sin(t/300+o.x)*3)}});
  drawNpcs(t);const all=[{n:me.n,c:me.c,k:me.k,x:me.x,y:me.y,s:Date.now()<sayT?sayS:'',f:me.f||1,an:me.an&&me.an.t>Date.now()?me.an:null,o:{a:me.a,e:me.fc,h:heldE(),st:meSt()}}];
  peers.forEach(p=>{const q=p.presence;if(q&&q.l==locKey())all.push({n:q.n,c:q.c,k:q.k,x:+q.x,y:+q.y,s:q.s,f:q.f||1,o:{a:q.a,e:q.e,h:q.h,st:peerSt(q)},an:peerAn(q)||(()=>{const v=q.ev,ts=v&&seenT[v.f+v.t];return ts&&Date.now()-ts<2500?{n:'emo',e:v.e}:null})()})});
- const dr=all.map(a=>({y:a.y,f:()=>pony(a.x*T,a.y*T,a.c,a.k,a.n||'?',a.s,a.f,t,a.an,a.o)}));(l.dec||[]).forEach(q=>dr.push({y:q.y+.6,f:()=>drawSpr(texOf('t'+q.t,t)||procTex(q.t),q.x,q.y,q.s||1)}));(l.objs||[]).forEach(o=>{if(o.lt)dr.push({y:o.y+.6,f:()=>drawLamp(o,t)})});dr.sort((a,b)=>a.y-b.y).forEach(d=>d.f());
- drawTop(l,x0,x1,y0,y1,t);drawGhost(t);drawTools(t,x0,x1,y0,y1);drawFx(t);cx.restore();if(Z==1)drawLight(l,W,H,t,Math.round(ox),Math.round(oy));drawWx(W,H,t);
+ const dr=all.map(a=>({y:a.y,f:()=>pony(a.x*T,a.y*T,a.c,a.k,a.n||'?',a.s,a.f,t,a.an,a.o)}));(l.dec||[]).forEach(q=>dr.push({y:q.y+.6,f:()=>drawSpr(texOf('t'+q.t,t)||procTex(q.t),q.x,q.y,q.s||1,q.r)}));(l.objs||[]).forEach(o=>{if(o.lt)dr.push({y:o.y+.6,f:()=>drawLamp(o,t)})});dr.sort((a,b)=>a.y-b.y).forEach(d=>d.f());
+ drawTop(l,x0,x1,y0,y1,t);if(window.drawCL)drawCL(l,x0,x1,y0,y1,t,1);drawGhost(t);drawTools(t,x0,x1,y0,y1);drawFx(t);cx.restore();if(Z==1)drawLight(l,W,H,t,Math.round(ox),Math.round(oy));drawWx(W,H,t);
 }
 let last=0;function loop(t){requestAnimationFrame(loop);const dt=Math.min(.05,(t-last)/1000||0);last=t;if(world&&!$('#intro').offsetParent==false){}step(dt);draw(t)}
 setInterval(()=>{if(world&&me.n)hk('onTick',api.me)},1000);
@@ -1129,6 +1129,67 @@ function renderSk(){tabbtn();const a=$('#admb'),S=world.sk=world.sk||{},ids=Obje
  b.insertAdjacentHTML('beforebegin',`<div>🦴 Анимация действия (🤝 парные — включи «На ближайшего игрока»)</div><select id="adn"><option value="">обычная (прыжок)</option>${Object.keys(S).map(i=>`<option value="${i}" ${x.dn==i?'selected':''}>🦴 ${(S[i].pair?'🤝 ':'')+S[i].n}</option>`).join('')}${DANCES.map(([d,e,t])=>`<option value="${d}" ${x.dn==d?'selected':''}>${e} ${t}</option>`).join('')}</select>`);
  const f=b.onclick;b.onclick=()=>{const dv=$('#adn').value,i=AI>=0?AI:world.acts.length;f();const q=world.acts[i];if(q){if(dv)q.dn=dv;else delete q.dn}}}}
 try{regSk()}catch(e){}
+</script>
+
+<script>
+/* ===== v11: свои слои + поворот блоков ===== */
+let BRt=0,BFl=0,CLE='';
+const GL=[['g','⬇ Земля'],['t','⬆ Верх'],['d','🌳 Декор']],RTMP=document.createElement('canvas');RTMP.width=RTMP.height=T;
+const isCL=id=>{const l=L();return !!(l&&l.cl&&l.cl.some(q=>q.id==id))};
+const lyName=id=>{const g=GL.find(q=>q[0]==id);if(g)return g[1];const q=(L().cl||[]).find(z=>z.id==id);return q?(q.up?'🔼 ':'🧱 ')+q.n:'⬇ Земля'};
+const curRot=()=>(BRt&3)|(BFl?4:0),nextRot=v=>{v=v|0;return(((v&3)+1)&3)|(v&4)};
+function ensL(){if(!['g','t','d'].includes(layer)&&!isCL(layer))layer='g'}
+function clGrid(l,id){l.ly=l.ly||{};if(!l.ly[id])l.ly[id]=l.rows.map(r=>'.'.repeat(r.length));return l.ly[id]}
+function rotSet(l,id,x,y){const k=id+':'+x+','+y,v=curRot();l.rt=l.rt||{};v?l.rt[k]=v:delete l.rt[k]}
+function setCL(l,x,y,ch){const g=clGrid(l,layer);if(y<0||x<0||y>=g.length||x>=g[0].length)return;g[y]=g[y].slice(0,x)+ch+g[y].slice(x+1);if(ch=='.'){if(l.rt)delete l.rt[layer+':'+x+','+y]}else rotSet(l,layer,x,y)}
+/* рисование */
+{const o=setT;setT=function(l,x,y,ch){ensL();if(isCL(layer))return setCL(l,x,y,ch);o(l,x,y,ch);if((layer=='g'||layer=='t')&&y>=0&&x>=0&&y<l.rows.length&&x<l.rows[0].length){if(ch=='.'){if(layer=='t'&&l.rt)delete l.rt['t:'+x+','+y]}else rotSet(l,layer,x,y)}}}
+{const o=floodFill;floodFill=function(l,x,y,ch){ensL();if(!isCL(layer))return o(l,x,y,ch);const g=clGrid(l,layer),W=g[0].length,H=g.length;if(y<0||x<0||y>=H||x>=W)return;const t=g[y][x];if(t==ch)return;const st=[[x,y]];let n=0;while(st.length&&n++<6000){const[a,b]=st.pop();if(a<0||b<0||a>=W||b>=H||g[b][a]!=t)continue;setCL(l,a,b,ch=='.'?'.':pickV(ch));st.push([a+1,b],[a-1,b],[a,b+1],[a,b-1])}}}
+{const o=paintX;paintX=function(e,d){ensL();const l=L(),tileB=world.tiles[brush]&&brush!='6';
+ if(brush=='@rot'){if(d||!editing||tab!='map')return;const r=cv.getBoundingClientRect(),fx=(e.clientX-r.left-r.width/2)/(T*ZV())+me.x,fy=(e.clientY-r.top-r.height/2)/(T*ZV())+me.y,x=Math.floor(fx),y=Math.floor(fy);
+  if(layer=='d'){const h=hitAt(l,fx,fy,true);if(h)h.q.r=nextRot(h.q.r)}else{const k=layer+':'+x+','+y;l.rt=l.rt||{};const v=nextRot(l.rt[k]);v?l.rt[k]=v:delete l.rt[k]}return}
+ if(isCL(layer)&&(tileB||brush=='.')){const[x,y]=tc(e),W=l.rows[0].length,h=BS>>1;for(let a=0;a<BS;a++)for(let b=0;b<BS;b++){const px=x-h+a,py=y-h+b,v=brush=='.'?'.':pickV(brush);setCL(l,px,py,v);if(MIR)setCL(l,W-1-px,py,v)}return}
+ const n0=(l.dec||[]).length;o(e,d);
+ if(layer=='d'){if(curRot()&&(l.dec||[]).length>n0)l.dec[l.dec.length-1].r=curRot();return}
+ if(editing&&tab=='map'&&(layer=='g'||layer=='t')){const[x,y]=tc(e);if(tileB)rotSet(l,layer,x,y);else if(brush=='.'&&layer=='t'&&l.rt)delete l.rt['t:'+x+','+y]}}}
+function snapMap(){const l=L(),o=JSON.parse(snapL());o.ly=l.ly||null;o.rt=l.rt||null;o.cl=l.cl||null;UN.push(JSON.stringify(o));if(UN.length>40)UN.shift();RE.length=0}
+{const o=applySnap;applySnap=function(j){o(j);const s=JSON.parse(j),l=L();['ly','rt','cl'].forEach(k=>{if(k in s){if(s[k])l[k]=s[k];else delete l[k]}})}}
+/* отрисовка */
+function drawRot(im,x,y,r){cx.save();cx.translate(x*T+T/2,y*T+T/2);if(r&4)cx.scale(-1,1);cx.rotate((r&3)*Math.PI/2);cx.drawImage(im,-T/2,-T/2,T,T);cx.restore()}
+function tileSrc(c,x,y,t){const im=texOf('t'+c,t);if(im)return im;const g=RTMP.getContext('2d'),dd=world.tiles[c],sv=cx;g.clearRect(0,0,T,T);cx=g;g.save();g.translate(-x*T,-y*T);try{if(dd&&dd.col&&!'0123456'.includes(c))drawCol(dd,x,y,t);else{g.fillStyle=c==1?'#3a7bd5':c==2?'#d9b779':c==5?'#8d6e63':DC[c]||'#7ec850';g.fillRect(x*T,y*T,T,T)}}catch(e){}g.restore();cx=sv;return RTMP}
+function drawCL(l,x0,x1,y0,y1,t,up){if(!l.cl)return;l.cl.forEach(q=>{if(!!q.up!=!!up||q.vis===0)return;const g=l.ly&&l.ly[q.id];if(!g)return;for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){const c=g[y]&&g[y][x];if(!c||c=='.')continue;const r=l.rt&&l.rt[q.id+':'+x+','+y]|0;
+ if(r){drawRot(tileSrc(c,x,y,t),x,y,r);continue}const im=texOf('t'+c,t);if(im)cx.drawImage(im,x*T,y*T,T,T);else{const dd=world.tiles[c];if(dd&&dd.col&&!'0123456'.includes(c))drawCol(dd,x,y,t);else{cx.fillStyle=DC[c]||'#7ec850';cx.fillRect(x*T,y*T,T,T)}}}})}
+function drawRotG(l,x0,x1,y0,y1,t){if(!l.rt)return;for(const k in l.rt){if(k[0]!='g'||k[1]!=':')continue;const[x,y]=k.slice(2).split(',').map(Number);if(x<x0||x>=x1||y<y0||y>=y1)continue;const c=l.rows[y]&&l.rows[y][x];if(c)drawRot(tileSrc(c,x,y,t),x,y,l.rt[k])}}
+function drawTop(l,x0,x1,y0,y1,t){if(!l.top)return;for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){const c=l.top[y]&&l.top[y][x];if(!c||c=='.')continue;const r=l.rt&&l.rt['t:'+x+','+y]|0,im=texOf('t'+c,t);if(im){r?drawRot(im,x,y,r):cx.drawImage(im,x*T,y*T,T,T)}else{cx.fillStyle=DC[c]||'#2e7d32';cx.fillRect(x*T,y*T,T,T)}}}
+function drawSpr(im,x,y,s,r){const sz=T*s;if(!r){cx.drawImage(im,x*T+T/2-sz/2,y*T+T-sz,sz,sz);return}cx.save();cx.translate(x*T+T/2,y*T+T-sz/2);if(r&4)cx.scale(-1,1);cx.rotate((r&3)*Math.PI/2);cx.drawImage(im,-sz/2,-sz/2,sz,sz);cx.restore()}
+{const o=drawGhost;drawGhost=function(t){if(brush=='@rot')return;o(t)}}
+/* коллизия слоёв «под игроком» */
+function clBlock(x,y){const l=L();if(!l||!l.cl||!l.ly)return false;const X=Math.floor(x),Y=Math.floor(y);for(const q of l.cl){if(q.up||q.nb||q.vis===0)continue;const g=l.ly[q.id],c=g&&g[Y]&&g[Y][X];if(!c||c=='.')continue;const d=world.tiles[c];if(!d||!d.b)continue;if(d.key&&doorOpen(0,x,y))continue;if(!d.hb)return true;const fx=x%1,fy=y%1;if(fx>=d.hb[0]&&fx<=d.hb[2]&&fy>=d.hb[1]&&fy<=d.hb[3])return true}return false}
+{const o=window.fuB;window.fuB=(x,y)=>(o&&o(x,y))||clBlock(x,y)}
+/* на каком слое игрок */
+function plLayer(){const l=L(),X=Math.floor(me.x),Y=Math.floor(me.y);let r={id:'g',n:'Земля'};(l.cl||[]).forEach(q=>{if(q.up||q.vis===0)return;const g=l.ly&&l.ly[q.id],c=g&&g[Y]&&g[Y][X];if(c&&c!='.')r={id:q.id,n:q.n}});return r}
+function plText(){const l=L(),X=Math.floor(me.x),Y=Math.floor(me.y),ab=[];if(l.top&&l.top[Y]&&l.top[Y][X]&&l.top[Y][X]!='.')ab.push('Верх');(l.cl||[]).forEach(q=>{const g=l.ly&&l.ly[q.id],c=g&&g[Y]&&g[Y][X];if(q.up&&c&&c!='.')ab.push(q.n)});return'🧍 Слой: '+plLayer().n+(ab.length?' · под: '+ab.join(', '):'')}
+{const b=document.createElement('div');b.id='lyb';b.style.cssText='position:absolute;top:48px;left:6px;background:#000b;padding:5px 8px;border-radius:8px;z-index:4;pointer-events:none;font-size:9px;display:none';document.body.appendChild(b);
+ setInterval(()=>{try{const on=world&&(editing||isAdm)&&$('#intro').style.display=='none';b.style.display=on?'':'none';if(on)b.textContent=plText()}catch(e){}},300)}
+/* панель слоёв в редакторе карты */
+{const o=renderMap;renderMap=function(){ensL();o();const a=$('#admb'),l=L();if(a.firstElementChild)a.firstElementChild.remove();const cl=l.cl=l.cl||[],pid=plLayer().id,
+ row=(id,n,x)=>`<div class="row"><button class="tb ${layer==id?'sel':''}" data-ly="${id}" style="flex:4;text-align:left">${pid==id?'🧍 ':''}${n}</button>${x||''}</div>`;
+ let h=`<b>🧱 Слои</b><div class="it">${plText()}</div>`+GL.map(([id,n])=>row(id,n)).join('')+cl.map(q=>row(q.id,(q.up?'🔼 ':'🧱 ')+q.n,`<button data-lv="${q.id}" style="flex:1">${q.vis===0?'🚫':'👁'}</button><button data-le="${q.id}" style="flex:1">⚙</button>`)).join('')+'<button id="lyn">➕ Новый слой</button>';
+ const q=cl.find(z=>z.id==CLE);if(q)h+=`<div class="it"><input id="lyname" value="${q.n.replace(/"/g,'&quot;')}"><select id="lyup"><option value="0" ${q.up?'':'selected'}>Под игроком</option><option value="1" ${q.up?'selected':''}>Над игроком (крыши, кроны)</option></select><label><input type="checkbox" id="lynb" ${q.nb?'checked':''}> Проходимый (без коллизии)</label><div class="row"><button id="lyu">▲</button><button id="lyd">▼</button><button id="lyx">🗑 Удалить</button></div></div>`;
+ h+=`<div class="row"><button id="brt" class="tb">↻ Кисть ${BRt*90}°</button><button id="bfl" class="tb ${BFl?'sel':''}">⇋ Зеркало</button></div><button class="tb ${brush=='@rot'?'sel':''}" id="brb">🔄 Повернуть блок или декор (тап)</button>`;
+ a.insertAdjacentHTML('afterbegin',h);
+ a.querySelectorAll('[data-ly]').forEach(b=>b.onclick=()=>{layer=b.dataset.ly;renderMap()});
+ a.querySelectorAll('[data-lv]').forEach(b=>b.onclick=()=>{const z=cl.find(w=>w.id==b.dataset.lv);z.vis=z.vis===0?1:0;renderMap()});
+ a.querySelectorAll('[data-le]').forEach(b=>b.onclick=()=>{CLE=CLE==b.dataset.le?'':b.dataset.le;renderMap()});
+ $('#lyn').onclick=async()=>{const n=await ask('Название слоя (Мост, Ковры, Крыши…)');if(!n)return;const id='c'+Date.now().toString(36);cl.push({id,n,up:0,vis:1});clGrid(l,id);layer=id;CLE=id;renderMap()};
+ $('#brt').onclick=()=>{BRt=(BRt+1)&3;renderMap()};$('#bfl').onclick=()=>{BFl=BFl?0:1;renderMap()};$('#brb').onclick=()=>{brush='@rot';renderMap()};
+ if(q){$('#lyname').oninput=e=>{q.n=e.target.value||'Слой'};$('#lyname').onchange=()=>renderMap();$('#lyup').onchange=e=>{q.up=+e.target.value;renderMap()};$('#lynb').onchange=e=>q.nb=e.target.checked?1:0;
+  const mv=d=>{const i=cl.indexOf(q),j=i+d;if(j<0||j>=cl.length)return;cl.splice(i,1);cl.splice(j,0,q);renderMap()};$('#lyu').onclick=()=>mv(-1);$('#lyd').onclick=()=>mv(1);
+  $('#lyx').onclick=()=>{cl.splice(cl.indexOf(q),1);if(l.ly)delete l.ly[q.id];if(l.rt)for(const k in l.rt)if(k.startsWith(q.id+':'))delete l.rt[k];if(layer==q.id)layer='g';CLE='';renderMap()}}}}
+/* плавающая панель */
+{const o=updEb;updEb=function(){ensL();o();$('#eL').textContent=lyName(layer);const b=$('#ebb');b.insertAdjacentHTML('beforeend',`<button class="tb ${brush=='@rot'?'sel':''}" id="ebT">🔄</button><button class="tb" id="ebR">↻${BRt*90}°</button><button class="tb ${BFl?'sel':''}" id="ebF">⇋</button>`);
+ $('#ebT').onclick=()=>{brush='@rot';updEb()};$('#ebR').onclick=()=>{BRt=(BRt+1)&3;updEb()};$('#ebF').onclick=()=>{BFl=BFl?0:1;updEb()}}}
+$('#eL').onclick=()=>{ensL();const ids=GL.map(q=>q[0]).concat((L().cl||[]).map(q=>q.id));layer=ids[(ids.indexOf(layer)+1)%ids.length];updEb()};
 </script>
 
 </body></html>
