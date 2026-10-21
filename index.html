@@ -1215,12 +1215,13 @@ const BX={};let myBx=null;
 function bxToggle(o){const T_=trs();if(!T_.length){toast('Нет треков — сделай их во вкладке Музыка');return}
  if(!o.on){o.on=1;o.tr=o.tr||T_[0];o.t0=Date.now()}else{const i=T_.indexOf(o.tr)+1;if(i>=T_.length){o.on=0}else{o.tr=T_[i];o.t0=Date.now()}}
  toast(o.on?'📻 '+o.tr:'📻 выкл');if(o.on)api.anim('dj',2500);syncBx()}
-function syncBx(){const o=(L().objs||[]).find(o=>o.on&&kindOf(o)=='music'&&Math.hypot(o.x+.5-me.x,o.y+.5-me.y)<30);myBx=o?{l:locKey(),x:o.x,y:o.y,tr:o.tr,t0:o.t0}:null;try{push()}catch(e){}}
+function syncBx(){const o=(L().objs||[]).find(o=>o.on&&kindOf(o)=='music'&&Math.hypot(o.x+.5-me.x,o.y+.5-me.y)<30)||Object.values(window.__tm||{}).find(o=>o.on&&o._k.startsWith(locKey()+':'));myBx=o?{l:locKey(),x:o.x,y:o.y,tr:o.tr,t0:o.t0}:null;try{push()}catch(e){}}
 setInterval(()=>{if(typeof room!='undefined'&&room&&!room.__w){room.__w=1;const p=room.presence.bind(room);room.presence=d=>p(Object.assign(d,{bx:myBx}))}},1000);
 const walls=(x0,y0,x1,y1)=>{let n=0;const k=Math.ceil(Math.hypot(x1-x0,y1-y0)*2);for(let i=1;i<k;i++){const x=x0+(x1-x0)*i/k,y=y0+(y1-y0)*i/k,c=tileAt(x,y),d=c&&world.tiles[c];if(d&&d.b&&!(d.key&&0))n+=.5}return n};
 const R=10;
 function sources(){if(!world||$('#intro').style.display!='none')return[];const a=[],lk=locKey();
  (L().objs||[]).forEach(o=>{if(o.on&&kindOf(o)=='music')a.push({id:'o'+lk+o.x+','+o.y,x:o.x+.5,y:o.y+.5,tr:o.tr,t0:o.t0})});
+ Object.values(window.__tm||{}).forEach(o=>{const it=world.items.find(i=>i.id==o.i);if(o.on&&it&&it.fk=='music'&&o._k.startsWith(lk+':'))a.push({id:'t'+o._k,x:o.x+.5,y:o.y+.5,tr:o.tr,t0:o.t0})});
  (typeof peers!='undefined'?peers:[]).forEach(p=>{const q=p.presence&&p.presence.bx;if(q&&q.l==lk)a.push({id:'p'+q.x+','+q.y+q.l,x:q.x+.5,y:q.y+.5,tr:q.tr,t0:q.t0})});return a}
 function ctx(){AC=AC||new AudioContext();AC.state=='suspended'&&AC.resume();return AC}
 const chain={};
@@ -1512,6 +1513,126 @@ if(P){P.style.bottom='';P.style.top='64px';
  document.addEventListener('click',e=>{if(vib&&navigator.vibrate&&e.target.closest&&e.target.closest('#bAct,.bigb'))navigator.vibrate(15)});
  const r=document.createElement('div');r.style.cssText='grid-column:1/3';r.innerHTML='🕹 Размер джойстика<input type="range" min="70" max="160" value="100" style="width:100%">';g.appendChild(r);
  r.querySelector('input').oninput=e=>document.documentElement.style.setProperty('--js',e.target.value/100)}
+})();
+</script>
+
+<script>
+/* ===== динамический джойстик + готовые пиксельные примеры ===== */
+(()=>{
+const $$=q=>document.querySelector(q);
+/* --- динамический джойстик --- */
+let dyn=true;try{dyn=localStorage.bmDJ!=='0'}catch(e){}
+const st=document.createElement('style');st.textContent='#dj{position:fixed;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%;background:radial-gradient(circle,#ffffff14,#ffffff30);border:3px solid #ffffff55;z-index:6;pointer-events:none;display:none;touch-action:none}#dk{position:absolute;left:35px;top:35px;width:40px;height:40px;border-radius:50%;background:var(--ac);box-shadow:0 0 12px var(--ac)}body.dyn #joy{opacity:.18;pointer-events:none}';document.head.appendChild(st);
+const dj=document.createElement('div');dj.id='dj';dj.innerHTML='<div id="dk"></div>';document.body.appendChild(dj);
+const dk=dj.firstChild,R=55;let id=null,cx0=0,cy0=0;
+const cv=$$('#cv');
+const apply=()=>document.body.classList.toggle('dyn',dyn);apply();
+const mv=t=>{let x=t.clientX-cx0,y=t.clientY-cy0;const m=Math.hypot(x,y);
+ if(m>R){const k=(m-R)/m;cx0+=x*k;cy0+=y*k;dj.style.left=cx0+'px';dj.style.top=cy0+'px';x=t.clientX-cx0;y=t.clientY-cy0}
+ const mm=Math.hypot(x,y)||1,l=Math.min(1,mm/R);dir=mm<8?{x:0,y:0}:{x:x/mm*l,y:y/mm*l};dk.style.transform=`translate(${Math.max(-R,Math.min(R,x))*.6}px,${Math.max(-R,Math.min(R,y))*.6}px)`};
+const end=()=>{id=null;dj.style.display='none';dir={x:0,y:0}};
+if(cv){cv.addEventListener('touchstart',e=>{if(!dyn||id!==null||(typeof editing!='undefined'&&editing))return;const t=e.changedTouches[0];id=t.identifier;cx0=t.clientX;cy0=t.clientY;dj.style.left=cx0+'px';dj.style.top=cy0+'px';dj.style.display='block';dk.style.transform='';},{passive:true});
+ cv.addEventListener('touchmove',e=>{if(id===null)return;for(const t of e.changedTouches)if(t.identifier===id)mv(t)},{passive:true});
+ ['touchend','touchcancel'].forEach(n=>cv.addEventListener(n,e=>{for(const t of e.changedTouches)if(t.identifier===id)end()},{passive:true}))}
+const g=$$('[data-x=home]');if(g){const b=document.createElement('button');b.style.cssText='font-size:9px;padding:7px 2px;background:#3b3760;border:2px solid #5a5590;border-radius:6px;color:#fff;min-height:40px;grid-column:1/3';const lb=()=>b.textContent='🕹 Джойстик: '+(dyn?'динамический':'фиксированный');lb();b.onclick=()=>{dyn=!dyn;try{localStorage.bmDJ=dyn?1:0}catch(e){}apply();lb();end()};g.parentNode.appendChild(b)}
+/* --- пиксельные примеры --- */
+const C={k:'#2b1d1d',w:'#ffffff',r:'#e04040',o:'#f09030',y:'#f8d848',g:'#58b848',d:'#2f7a35',b:'#8a5a30',B:'#c08850',p:'#f0a0c0',c:'#58c8e8',n:'#3a62c8',s:'#a0a0a8',S:'#5a5a66',t:'#f0d8a0',m:'#8a50c0',M:'#b080e0'};
+const px=a=>{const c=document.createElement('canvas');c.width=c.height=16;const g=c.getContext('2d');a.split('|').forEach((r,y)=>[...r].forEach((ch,x)=>{if(C[ch]){g.fillStyle=C[ch];g.fillRect(x*2,y*2,2,2)}}));return c.toDataURL()};
+// id, имя, эмодзи, тип, [время, монеты, сытость] , картинка 8×8
+const EX=[
+['apple','Яблоко','🍎','dish',[1,1,8],'...bg...|.rrrrrr.|rrwrrrrr|rrwrrrrr|rrrrrrrr|.rrrrrr.|..rrrr..|........'],
+['pizza','Пицца','🍕','dish',[3,4,30],'tttttttt|tyyryyt.|.tyyyrt.|.tyryyt.|..tyyt..|...tr...|....t...|........'],
+['cake','Торт','🍰','dish',[3,5,25],'...r....|...k....|.wwwwww.|wppwppww|wwwwwwww|bbbbbbbb|bBBBBBBb|bbbbbbbb'],
+['fish_dish','Рыба','🐟','dish',[2,3,20],'........|...cc..c|..ccccc.|.cwkcccc|.ccccccc|..ccccc.|...cc..c|........'],
+['cookie','Печенье','🍪','dish',[1,1,10],'........|..bbbb..|.bBkBBb.|bBBBkBBb|bBkBBBBb|bBBBBkBb|.bBBBBb.|..bbbb..'],
+['soup','Суп','🍲','dish',[2,3,20],'..w..w..|...w..w.|........|.oooooo.|oyyoyyoo|nnnnnnnn|.nnnnnn.|..nnnn..'],
+['chair','Стул','🪑','sit',0,'bb......|bb......|bb......|bbBBBBBB|bbBBBBBB|bb....bb|bb....bb|bb....bb'],
+['sofa','Диван','🛋','sit',0,'........|mmmmmmmm|mMMmmMMm|mMMmmMMm|mmmmmmmm|mmmmmmmm|bb....bb|bb....bb'],
+['bed','Кровать','🛏','sleep',0,'........|bb......|bbwwrrrr|bbwwrrrr|bbrrrrrr|bbbbbbbb|bb....bb|bb....bb'],
+['table','Стол','🪵','table',0,'........|........|bbbbbbbb|BBBBBBBB|bb....bb|bb....bb|bb....bb|bb....bb'],
+['boombox','Бумбокс','📻','music',0,'..SSSS..|.S....S.|SSSSSSSS|SnnSSnnS|SnkSSnkS|SnnSSnnS|SSSSSSSS|........'],
+['plant','Цветок в горшке','🪴','decor',0,'...g.g..|..ggggg.|.ggdgggg|..gggg..|...bb...|..rrrr..|..rrrr..|...rr...'],
+['shelf','Книжный шкаф','📚','decor',0,'bbbbbbbb|brgnrgnb|brgnrgnb|bbbbbbbb|bnrgnrgb|bnrgnrgb|bbbbbbbb|bb....bb'],
+['paint','Картина','🖼','decor',0,'bbbbbbbb|bcccyccb|bccccccb|bccgcccb|bcgggcgb|bggggggb|bggggggb|bbbbbbbb'],
+['lamp_f','Торшер','💡','decor',0,'..yyyy..|.yyyyyy.|.yyyyyy.|..kkkk..|...kk...|...kk...|..kkkk..|........']];
+function addExamples(){if(!world||!world.items)return;let n=0;
+ EX.forEach(([id,nm,e,k,dv,art])=>{const url=px(art);let it=world.items.find(i=>i.id==id);
+  if(!it){it={id,n:nm,e};world.items.push(it);n++}
+  it.fk=k;if(k=='dish'){it.ft=dv[0];it.fc=dv[1];it.fs=dv[2]}
+  if(k!='dish'&&id!='paint'){if(!it.tile||!world.tiles[it.tile]){const ch=[...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].find(c=>!world.tiles[c]);if(ch){world.tiles[ch]={n:nm,b:(k=='sit'||k=='sleep')?0:1};it.tile=ch}}
+   if(it.tile)world.tex['t'+it.tile]={fr:[url],fps:4}}
+  world.tex['i_'+id]={fr:[url],fps:4}});
+ try{loadTex();fillKinds&&fillKinds();updHand&&updHand()}catch(e){}
+ EX.forEach(([id])=>{me.inv=me.inv||{};if(!(me.inv[id]>0))me.inv[id]=3});try{saveMe();updHand()}catch(e){}
+ toast('🎁 Добавлено '+n+' предметов с пиксельными текстурами (по 3 шт. в 🎒). Не забудь «Выпуск»');}
+window.addExamples=addExamples;
+const _ri=renderItems;renderItems=function(){_ri.apply(this,arguments);const a=$$('#admb');if(!a)return;const b=document.createElement('button');b.textContent='🎁 Добавить примеры: еда, мебель, декор (с текстурами)';b.style.cssText='width:100%;background:var(--ac);color:#000;margin-bottom:6px;min-height:44px';b.onclick=()=>{addExamples();renderItems()};a.insertBefore(b,a.firstChild)};
+})();
+</script>
+
+<script>
+/* ===== фикс: мебель без блока ставится как объект ===== */
+(()=>{const _u=useItem;useItem=function(it){
+ if(it&&it.fk&&it.fk!='dish'&&!it.tile&&!it.u){
+  const adm=typeof isAdm!='undefined'&&isAdm;
+  if(me.l!='isl'&&!adm){toast('Ставить можно на своём острове');return}
+  const f=me.fd||{x:0,y:1},x=Math.floor(me.x+f.x),y=Math.floor(me.y+f.y),l=L(),m=me.l=='isl'?1:0;
+  if(!l.rows||y<m||x<m||y>=l.rows.length-m||x>=l.rows[0].length-m||(l.portals&&l.portals[x+','+y])){toast('Сюда нельзя');return}
+  if((l.objs||[]).some(o=>Math.floor(o.x)==x&&Math.floor(o.y)==y&&!o.lt)){toast('Клетка занята');return}
+  (l.objs=l.objs||[]).push({x,y,i:it.id});api.consume(it.id);try{saveMe()}catch(e){}api.fx('✨');return}
+ return _u.apply(this,arguments)}})();
+</script>
+
+<script>
+/* ===== Блоки со своим кодом + кухня (печь, миска, ящик) ===== */
+(()=>{
+const $$=q=>document.querySelector(q);
+const BS=window.__bs=window.__bs||{};
+const iT=id=>world.items.find(i=>i.id==id),nm=id=>{const t=iT(id);return t?t.e+' '+t.n:id};
+const has=(id,n=1)=>(me.inv&&me.inv[id]|0)>=n;
+const give=(id,n=1)=>{me.inv=me.inv||{};me.inv[id]=(me.inv[id]|0)+n;try{saveMe();updHand()}catch(e){}};
+const take=(id,n=1)=>{me.inv[id]=(me.inv[id]|0)-n;if(me.inv[id]<=0){delete me.inv[id];if(me.sel==id)me.sel=''}try{saveMe();updHand()}catch(e){}};
+function mkCtx(x,y,c){const k=locKey()+':'+x+','+y,st=BS[k]=BS[k]||{};
+ const ctx={x,y,tile:c,def:world.tiles[c],state:st,has,give,take,name:nm,
+  say:t=>toast(t),
+  cook(inp,out,n,sec,fxe){inp=inp||{};n=n||1;const now=Date.now();
+   if(st.out){if(now<st.t){toast('⏳ '+nm(st.out)+' готовится… '+Math.ceil((st.t-now)/1000)+' с');return false}
+    give(st.out,st.n);toast('✅ Готово: '+nm(st.out)+(st.n>1?' ×'+st.n:''));api.fx(iT(st.out)?iT(st.out).e:'✅');st.out=null;return true}
+   const miss=Object.entries(inp).filter(([i,q])=>!has(i,q));
+   if(miss.length){toast('Нужно: '+Object.entries(inp).map(([i,q])=>nm(i)+(q>1?' ×'+q:'')).join(' + '));return false}
+   Object.entries(inp).forEach(([i,q])=>take(i,q));st.out=out;st.n=n;st.t=now+(sec||3)*1000;api.fx(fxe||'♨️');api.anim('place',700);
+   toast('🔥 Начал: '+nm(out)+' ('+(sec||3)+' с)');return true},
+  recipes(list,fxe){if(st.out)return ctx.cook();const r=list.find(q=>Object.entries(q[0]).every(([i,v])=>has(i,v)));
+   if(r)return ctx.cook(r[0],r[1],r[2],r[3],fxe);toast('Рецепты: '+list.map(q=>Object.entries(q[0]).map(([i,v])=>nm(i)+(v>1?'×'+v:'')).join('+')+' → '+nm(q[1])).join(' | '));return false},
+  every(sec,fn){const now=Date.now();if(st.cd&&now<st.cd){toast('⏳ Подожди '+Math.ceil((st.cd-now)/1000)+' с');return false}st.cd=now+sec*1000;fn();return true}};
+ return ctx}
+const found=()=>{const f=me.fd||{x:0,y:1},cells=[[Math.floor(me.x+f.x),Math.floor(me.y+f.y)],[Math.floor(me.x),Math.floor(me.y)],[Math.floor(me.x+1),Math.floor(me.y)],[Math.floor(me.x-1),Math.floor(me.y)],[Math.floor(me.x),Math.floor(me.y+1)],[Math.floor(me.x),Math.floor(me.y-1)]];
+ for(const[x,y]of cells){const c=tileAt(x+.5,y+.5),d=c&&world.tiles[c];if(d&&d.code&&Math.hypot(x+.5-me.x,y+.5-me.y)<1.9)return[x,y,c,d]}return null};
+const _a=act;act=function(){const q=found();if(q){const[x,y,c,d]=q;try{new Function('api','ctx','tile',d.code)(api,mkCtx(x,y,c),c)}catch(e){toast('Ошибка блока: '+e.message)}return}return _a.apply(this,arguments)};
+/* --- редактор: поле кода у каждого блока --- */
+const _rt=renderTiles;renderTiles=function(){_rt.apply(this,arguments);const a=$$('#admb');if(!a)return;
+ a.querySelectorAll('input[data-f=n]').forEach(inp=>{const c=inp.dataset.c,box=inp.closest('.it');if(!box)return;const w=document.createElement('div');
+  w.innerHTML='<div style="opacity:.7;margin-top:4px">⚙️ Код при ✋ (api, ctx, tile) — пусто = обычный блок</div>';
+  const t=document.createElement('textarea');t.rows=4;t.spellcheck=false;t.style.cssText='width:100%;font:11px monospace';t.placeholder="ctx.recipes([[{dough:1},'bread',1,5]],'🔥')";t.value=world.tiles[c].code||'';t.oninput=()=>{if(t.value.trim())world.tiles[c].code=t.value;else delete world.tiles[c].code};w.appendChild(t);box.appendChild(w)});
+ const b=document.createElement('button');b.textContent='🍞 Добавить кухню: печь, миска для теста, ящик продуктов';b.style.cssText='width:100%;background:var(--ac);color:#000;min-height:44px;margin-bottom:6px';b.onclick=()=>{addKitchen();renderTiles()};a.insertBefore(b,a.firstChild);
+ const h=document.createElement('div');h.style.cssText='opacity:.6;font-size:9px;margin-bottom:6px;line-height:1.5';h.innerHTML='Подсказки для кода: <b>ctx.cook({мука:2},"хлеб",1,5)</b> · <b>ctx.recipes([[ {id:n}, "результат", кол-во, сек ], …])</b> · <b>ctx.every(сек, ()=>…)</b> · <b>ctx.has/take/give(id,n)</b> · <b>ctx.state</b> (память блока) · <b>api.say/coins/anim/fx/sound</b>';a.insertBefore(h,b.nextSibling)};
+/* --- пример: кухня --- */
+const C={k:'#2b1d1d',w:'#fff',r:'#e04040',o:'#f09030',y:'#f8d848',g:'#58b848',b:'#8a5a30',B:'#c08850',s:'#a0a0a8',S:'#5a5a66',t:'#f0d8a0',T:'#e8c070'};
+const px=a=>{const c=document.createElement('canvas');c.width=c.height=16;const g=c.getContext('2d');a.split('|').forEach((r,y)=>[...r].forEach((ch,x)=>{if(C[ch]){g.fillStyle=C[ch];g.fillRect(x*2,y*2,2,2)}}));return c.toDataURL()};
+const KI=[['flour','Мука','🌾','....ww..|...wwww.|..tttttt|.tttwwtt|.tttttt.|tttttttt|tttttttt|.tttttt.'],['egg','Яйцо','🥚','...ww...|..wwww..|.wwwwww.|.wwwwww.|.wwwwww.|.wwwwww.|..wwww..|........'],['dough','Тесто','🫓','........|..tttt..|.tTtTtt.|tttTtttt|tTtttTtt|.tttttt.|..tttt..|........'],['bread','Хлеб','🍞','..BBBB..|.BBBBBB.|BBBBBBBB|BbBBBBbB|bBBBBBBb|tttttttt|tttttttt|.tttttt.'],['pie','Яблочный пирог','🥧','........|.BBBBBB.|BBrBBrBB|BrBBBBrB|BBrBBrBB|bBBBBBBb|.bbbbbb.|........']];
+const KB=[
+ ['oven','Печь','♨️','SSSSSSSS|SssssssS|S.kkkk.S|SokkkkoS|SoyyyyoS|SoyyyyoS|SSSSSSSS|Sb....bS',"// Печь: выпекает по рецептам из того, что есть в рюкзаке\nctx.recipes([\n [{dough:1,apple:1},'pie',1,6],\n [{dough:1},'bread',1,5]\n],'🔥')"],
+ ['bowl','Миска для теста','🥣','........|........|.SSSSSS.|SssssssS|SttTttsS|SttttttS|.SttttS.|..SSSS..',"// Миска: 2 муки + 1 яйцо -> тесто\nctx.recipes([\n [{flour:2,egg:1},'dough',1,3]\n],'💪')"],
+ ['crate','Ящик продуктов','📦','bbbbbbbb|bBBBBBBb|bB.BB.Bb|bBBBBBBb|bbbbbbbb|bBBBBBBb|bBBBBBBb|bbbbbbbb',"// Ящик: раз в 8 секунд даёт муку и яйцо\nctx.every(8,()=>{ctx.give('flour',2);ctx.give('egg');api.fx('📦');ctx.say('Взял 🌾×2 и 🥚')})"]];
+function addKitchen(){let n=0;
+ KI.forEach(([id,name,e,art])=>{let it=iT(id);if(!it){it={id,n:name,e};world.items.push(it);n++}it.fk='dish';it.ft=2;it.fc=2;it.fs=id=='bread'||id=='pie'?30:0;if(id=='flour'||id=='egg'||id=='dough'){delete it.fk}world.tex['i_'+id]={fr:[px(art)],fps:4};me.inv=me.inv||{};if(!(me.inv[id]>0)&&id!='bread'&&id!='pie')me.inv[id]=2});
+ KB.forEach(([id,name,e,art,code])=>{let it=iT(id);if(!it){it={id,n:name,e};world.items.push(it)}
+  if(!it.tile||!world.tiles[it.tile]){const ch=[...'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'].find(c=>!world.tiles[c]);world.tiles[ch]={n:name,b:1};it.tile=ch}
+  world.tiles[it.tile].code=code;world.tiles[it.tile].n=name;const u=px(art);world.tex['t'+it.tile]={fr:[u],fps:4};world.tex['i_'+id]={fr:[u],fps:4};me.inv[id]=Math.max(me.inv[id]|0,1)});
+ if(!iT('apple')&&typeof addExamples=='function')addExamples();
+ try{loadTex();fillKinds&&fillKinds();saveMe();updHand()}catch(e){}
+ toast('🍞 Кухня добавлена: печь, миска, ящик (по 1 в 🎒) + мука, яйца. Поставь рядом и жми ✋. Не забудь «Выпуск»')}
+window.addKitchen=addKitchen;
 })();
 </script>
 </body></html>
