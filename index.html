@@ -1995,7 +1995,7 @@ function pick(kind,cb){const P=h('div','bkp'),ct=h('div','ct'),ls=h('div','ls');
  if(kind=='h'){const items=[['','▶ Обычный скрипт'],...Object.entries(HATD).filter(([k,v])=>hookMode||!v.hk).map(([k,v])=>[k,v.t.replace(/\{\w+\}/g,'…')])];items.forEach(([k,t])=>{const b=h('button','',t);b.onclick=()=>{close();cb(k)};ls.append(b)});}
  else{const cats=Object.keys(CT).filter(c=>Object.values(BD).some(d=>d.c==c&&(kind=='r'?d.k=='r':d.k!='r')));cat=cats[0];
   const show=()=>{ct.innerHTML='';cats.forEach(c=>{const b=h('button','',CT[c][0]);b.style.background=c==cat?CT[c][1]:'#3b3570';b.onclick=()=>{cat=c;show()};ct.append(b)});ls.innerHTML='';Object.entries(BD).filter(([id,d])=>d.c==cat&&(kind=='r'?d.k=='r':d.k!='r')).forEach(([id,d])=>{const b=h('button','',esc(d.l.replace(/\{\w+\}/g,'…')));b.style.background=CT[cat][1];b.onclick=()=>{close();cb(mk(id))};ls.append(b)})};show()}
- const x=h('button','','✕ Закрыть');x.style.margin='0 8px 8px';if(kind!='h'){const q=h('input');q.placeholder='🔍 поиск блока…';q.style.cssText='margin:0 8px 6px;padding:9px;border-radius:8px;border:0;font:14px system-ui';q.oninput=()=>{const t=q.value.toLowerCase().trim();ls.innerHTML='';Object.entries(BD).filter(([id,d])=>(kind=='r'?d.k=='r':d.k!='r')&&(!t||d.l.toLowerCase().includes(t))).forEach(([id,d])=>{const b=h('button','',esc(d.l.replace(/\{\w+\}/g,'…')));b.style.background=CT[d.c][1];b.onclick=()=>{close();cb(mk(id))};ls.append(b)})};P.insertBefore(q,ls)}x.onclick=close;P.append(ct,ls,x);ov.append(P)}
+ const x=h('button','','✕ Закрыть');x.style.margin='0 8px 8px';if(kind!='h'){const q=h('input');q.placeholder='🔍 поиск блока…';q.style.cssText='margin:0 8px 6px;padding:9px;border-radius:8px;border:0;font:14px system-ui';q.oninput=()=>{const t=q.value.toLowerCase().trim();ls.innerHTML='';Object.entries(BD).filter(([id,d])=>(kind=='r'?d.k=='r':d.k!='r')&&(!t||d.l.toLowerCase().includes(t))).forEach(([id,d])=>{const b=h('button','',esc(d.l.replace(/\{\w+\}/g,'…')));b.style.background=CT[d.c][1];b.onclick=()=>{close();cb(mk(id))};ls.append(b)})};P.append(ct,q)}x.onclick=close;if(!P.contains(ct))P.append(ct);P.append(ls,x);ov.append(P)}
 function build(){ov=h('div','');ov.id='bke';ov.innerHTML='<div id="bkh"><button id="bkx">←</button><b>🧩 Блоки</b><button id="bke1">📚</button><button id="bkq">❓</button><button id="bkr">▶</button><button id="bkv">📄 Код</button><button id="bko" style="background:#2fa86b">✓ Готово</button></div><div id="bkw"></div><pre id="bkc"></pre>';document.body.append(ov);
  $('#bkx').onclick=()=>ov.classList.remove('on');$('#bke1').onclick=tpl;$('#bkq').onclick=()=>alert(HELP);$('#bkv').onclick=()=>{const c=$('#bkc');c.style.display=c.style.display=='block'?'none':'block'};
  $('#bkr').onclick=()=>{try{new Function('api',generate(ws))(api);toast('▶ Запущено')}catch(e){toast('Ошибка: '+e.message)}};
@@ -2465,6 +2465,35 @@ const _ri=renderItems;renderItems=function(){_ri.apply(this,arguments);const ia=
  b.innerHTML='<b>📎 Скрипт из библиотеки (запускается при использовании)</b><select id="lsel"><option value="">— нет —</option>'+idx().map(n=>`<option ${n==it.ls?'selected':''}>${n}</option>`).join('')+'</select>';ia.parentNode.insertBefore(b,ia);
  const o=ia.onclick;ia.onclick=()=>{const id=IT>=0?world.items[IT].id:null,v=$$('#lsel').value;o();const t=id?world.items.find(x=>x.id==id):world.items[world.items.length-1];if(t)t.ls=v}};
 const _u=useItem;useItem=function(it){const r=_u.apply(this,arguments);if(it&&it.ls)api.runLib(it.ls,{item:it});return r};
+})();
+</script>
+
+<style>
+/* ===== v9: удобство на телефоне ===== */
+#bke,#bke *{-webkit-user-select:text;user-select:text}
+#bke{font-size:15px}
+#bkh{flex-wrap:nowrap;padding:8px 8px 4px}#bkh b{font-size:16px}
+#bkh #bko{padding:10px 16px;font-weight:bold;white-space:nowrap}
+#bkt{display:flex;gap:6px;padding:4px 8px 8px;overflow-x:auto;background:#26224a;-webkit-overflow-scrolling:touch;touch-action:pan-x}
+#bkt button{flex:none;min-width:46px;min-height:42px;font-size:18px;background:#3b3570;color:#fff;border:0;border-radius:10px}
+#bkw{padding:8px 8px 110px}
+.bk{padding:9px 10px;gap:8px;border-radius:12px}
+.bk input,.bk select,.bk textarea{font-size:16px;min-height:38px;max-width:100%;padding:6px 8px}
+.bk .mini{min-height:38px;min-width:38px;font-size:15px}
+.bkp{max-height:78%;border-radius:18px 18px 0 0;box-shadow:0 -6px 24px #000a}
+.bkp .ct{padding:10px 8px 6px}.bkp .ct button{min-height:42px;font-size:14px;border:0;color:#fff;border-radius:10px;padding:8px 12px}
+.bkp .ls button{min-height:48px;font-size:16px;padding:10px 14px;border:0;border-radius:10px}
+.bkp input{font-size:16px!important}
+#bkfab{position:absolute;right:16px;bottom:18px;z-index:2;width:62px;height:62px;border-radius:50%;border:0;background:#ff8ad8;color:#000;font-size:34px;box-shadow:0 4px 14px #000a}
+.stk h4{font-size:15px}.stk{padding:10px}
+.bkbar button{min-height:46px}
+</style>
+<script>
+(()=>{
+const q=s=>document.querySelector(s),mv=()=>{const h=q('#bkh');if(!h||h.dataset.v9||!h.dataset.v8)return;h.dataset.v9=1;
+ const t=document.createElement('div');t.id='bkt';h.after(t);[...h.querySelectorAll('button')].forEach(b=>{if(b.id!='bkx'&&b.id!='bko')t.append(b)});
+ const f=document.createElement('button');f.id='bkfab';f.textContent='＋';f.onclick=()=>{const k=[...document.querySelectorAll('#bkw .stk')].pop(),a=k&&[...k.children].reverse().find(e=>e.tagName=='BUTTON'&&e.classList.contains('add'));if(a)a.click();else{const n=[...document.querySelectorAll('#bkw>button.add')].pop();if(n)n.click()}};q('#bke').append(f)};
+new MutationObserver(mv).observe(document.body,{childList:true,subtree:true});mv();
 })();
 </script>
 </body></html>
