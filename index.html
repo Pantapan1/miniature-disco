@@ -2496,4 +2496,323 @@ const q=s=>document.querySelector(s),mv=()=>{const h=q('#bkh');if(!h||h.dataset.
 new MutationObserver(mv).observe(document.body,{childList:true,subtree:true});mv();
 })();
 </script>
+<style>
+/* ===== v10: админка ===== */
+#adm.fs{height:100%!important;border-radius:0;border-top:0}
+#aFs{flex:none!important;width:48px;background:#3b3570!important}
+#ahw{position:sticky;top:0;z-index:6;box-shadow:0 4px 10px #0006}
+#admb{padding-bottom:90px}
+#adm .it label{display:flex;gap:8px;align-items:center;padding:4px 0}
+#adm .it input[type=checkbox]{width:20px;height:20px;flex:none}
+#adm .it>.row{gap:6px}#adm .row button{min-height:40px;min-width:40px}
+#atb .tb:active{transform:scale(.97)}
+#atb .tb{font-weight:600}
+</style>
+<script>
+(()=>{
+const BK=window.BK,DD=BK.D,O=BK.O,BR=BK.BKR,N=BK.N,V0=BK.V,$$=q=>document.querySelector(q),H=(t,c,x)=>{const e=document.createElement(t);if(c)e.style.cssText=c;if(x!=null)e.textContent=x;return e},R=(i,c,l,f,d,j)=>DD(i,'r',c,l,f,d,j),E=f=>()=>[['','—']].concat(f()),sv=()=>{try{save('pm_me',me)}catch(e){}};
+const rows=()=>((L()||{}).rows||[]),fc=()=>{const f=typeof fdv=='function'?fdv():(me.fd||{x:0,y:1});return[Math.floor(me.x+f.x),Math.floor(me.y+f.y)]};
+/* ===== ⚡ электричество ===== */
+const TL=()=>(world&&world.tiles)||{},cond=c=>{const d=TL()[c];return d&&['wire','wireon','src','load','loadon','swon'].includes(d.el)};
+const comp=(x0,y0,seen)=>{const r=rows(),cells=[],q=[[x0,y0]],S=seen||new Set();let sup=0,dem=0;S.add(x0+','+y0);while(q.length){const[x,y]=q.pop();const c=r[y][x],d=TL()[c];cells.push([x,y,c,d]);if(d.el=='src')sup+=+d.p||1;if(d.el=='load'||d.el=='loadon')dem+=+d.n||1;for(const[i,j]of[[1,0],[-1,0],[0,1],[0,-1]]){const X=x+i,Y=y+j,k=X+','+Y;if(Y<0||Y>=r.length||X<0||X>=(r[Y]||'').length||S.has(k))continue;if(cond(r[Y][X])){S.add(k);q.push([X,Y])}}}return{cells,sup,dem,on:sup>0&&sup>=dem}};
+let eln=0,elt=0;setInterval(()=>{try{if(!me||!me.n||!world||!world.tiles)return;if(Date.now()>elt){elt=Date.now()+2000;eln=Object.values(world.tiles).some(d=>d.el)}if(!eln)return;const r=rows(),seen=new Set(),ch=[];for(let y=0;y<r.length;y++)for(let x=0;x<r[y].length;x++){if(seen.has(x+','+y)||!cond(r[y][x]))continue;const g=comp(x,y,seen);g.cells.forEach(([X,Y,c,d])=>{if(g.on&&(d.el=='load'||d.el=='wire')&&d.u)ch.push([X,Y,d.u]);if(!g.on&&(d.el=='loadon'||d.el=='wireon')&&d.u)ch.push([X,Y,d.u])})}ch.forEach(([x,y,c])=>api.setTile(x,y,c))}catch(e){}},400);
+Object.assign(api,{elRole:(t,role,n,u)=>{const d=TL()[t],e=u&&TL()[u];if(!d)return;if(role=='src'){d.el='src';d.p=+n||1}else if(role=='wire'){d.el='wire';if(e){d.u=u;e.el='wireon';e.u=t}}else if(role=='load'){d.el='load';d.n=+n||1;d.u=u;if(e){e.el='loadon';e.u=t;e.n=d.n}}else if(role=='sw'){d.el='sw';d.u=u;if(e){e.el='swon';e.u=t}}},
+ elOn:(x,y)=>{try{return cond(rows()[y][x])&&comp(x,y).on}catch(e){return false}},elPow:(x,y)=>{try{return cond(rows()[y][x])?comp(x,y).sup:0}catch(e){return 0}}});
+/* ===== шаги и касания блоков (скрипты на блоках) ===== */
+const runT=(code,c,x,y)=>{try{new Function('api','tile','x','y',"const _cx=x,_cy=y,p=undefined,item=undefined,target=undefined;"+String(code).replace(/\n?\/\*BLK:[^*]*\*\/\s*$/,''))(api,c,x,y)}catch(e){toast('Скрипт блока: '+e.message)}};
+let lk='';setInterval(()=>{try{if(!me||!me.n||!world)return;const x=Math.floor(me.x),y=Math.floor(me.y),k=me.l+':'+x+','+y;if(k==lk)return;lk=k;const c=(rows()[y]||'')[x];if(c==null)return;BR.fire('step',c,x,y);const d=TL()[c];if(d&&d.stp)runT(d.stp,c,x,y)}catch(e){}},80);
+const bA=$$('#bAct'),_a=bA.onclick;bA.onclick=()=>{try{const[x,y]=fc(),c=(rows()[y]||'')[x],d=TL()[c];if(d){if((d.el=='sw'||d.el=='swon')&&d.u)api.setTile(x,y,d.u);if(d.tch)runT(d.tch,c,x,y)}}catch(e){}return _a()};
+setInterval(()=>{try{for(const c in TL()){const d=TL()[c];if(d.gl)api.glowTile(c,d.gl.r,d.gl.c,d.gl.a)}}catch(e){}},2500);
+BK.HATD.onStep={t:'👣 Когда игрок наступил на блок {t}',f:{t:E(O.tile)},j:(A,b)=>`api.on("step",function(_stc,_sx,_sy){if(!${A.t}||_stc==${A.t}){\n${b}\n}})`,hk:1};
+const V=x=>`(typeof ${x}!='undefined'?${x}:0)`;R('stpx','mech','x шага',{},{},()=>V('_sx'));R('stpy','mech','y шага',{},{},()=>V('_sy'));
+/* ===== блоки ===== */
+DD('elsrc','s','mech','⚡ блок {t} вырабатывает ток {p}',{t:O.tile,p:'e'},{p:5},A=>`api.elRole(${A.t},"src",${A.p})`);
+DD('elwire','s','mech','〰 блок {t} — провод (под током вид {u})',{t:O.tile,u:E(O.tile)},{},A=>`api.elRole(${A.t},"wire",0,${A.u})`);
+DD('elload','s','mech','💡 блок {t} — потребитель {n}, при токе станет {u}',{t:O.tile,n:'e',u:O.tile},{n:1},A=>`api.elRole(${A.t},"load",${A.n},${A.u})`);
+DD('elsw','s','mech','🔘 блок {t} — выключатель (включённый вид {u}), касание переключает',{t:O.tile,u:O.tile},{},A=>`api.elRole(${A.t},"sw",0,${A.u})`);
+R('elon','mech','есть ток в клетке x {x} y {y}?',{x:'e',y:'e'},{x:5,y:5},A=>`api.elOn(${A.x},${A.y})`);R('elpow','mech','выработка сети в клетке x {x} y {y}',{x:'e',y:'e'},{x:5,y:5},A=>`api.elPow(${A.x},${A.y})`);
+DD('tprop','s','wld','🏃 блок {t}: скорость ходьбы ×{v}',{t:O.tile,v:'e'},{v:1},A=>`api.tProp(${A.t},${A.v})`);
+const CLOL=()=>(world.clo||[]).map(x=>[x.id,'👕 '+x.n]);
+DD('wear','s','act','👕 надеть {c}',{c:CLOL},{},A=>`api.wear(${A.c})`);DD('unwear','s','act','👕 снять {c}',{c:CLOL},{},A=>`api.unwear(${A.c})`);R('wearing','pl','надето {c}?',{c:CLOL},{},A=>`api.wearing(${A.c})`);
+DD('emote','s','act','🎭 сыграть эмоцию/действие {a}',{a:()=>(world.acts||[]).map(a=>[a.t,a.e+' '+a.t])},{},A=>`api.emote(${A.a})`);
+DD('bmode','s','wld','🏝 режим стройки: {m}',{m:()=>[['1','по одному'],['l3','линия 3'],['l5','линия 5'],['s3','квадрат 3×3']]},{},A=>`api.bMode(${A.m})`);
+DD('islundo','s','wld','↩ отменить последнюю постройку',{},{},()=>`api.islUndo()`);
+DD('pline','s','wld','🧱 поставить {n} блоков {t} линией вперёд (на острове)',{t:O.tile,n:'e'},{n:3},A=>`api.placeLine(${A.t},${A.n})`);
+Object.assign(api,{tProp:(t,v)=>{if(TL()[t])TL()[t].sp=+v||1},wear:id=>{const a=(me.cl||'').split(',').filter(Boolean);if(!a.includes(id))a.push(id);me.cl=a.join(',');sv();try{push()}catch(e){}},unwear:id=>{me.cl=(me.cl||'').split(',').filter(x=>x&&x!=id).join(',');sv();try{push()}catch(e){}},wearing:id=>(me.cl||'').split(',').includes(id),emote:t=>{const a=(world.acts||[]).find(x=>x.t==t);if(a)doAct(a)}});
+/* ===== 🏝 улучшенная стройка на острове ===== */
+const BM={mode:'1',grid:1,h:[]};
+const chAt=(x,y)=>((me.island&&me.island.rows[y])||'')[x],tItem=c=>world.items.find(i=>i.tile==c);
+const okc=(x,y)=>{const r=me.island.rows;return !(y<1||x<1||y>=r.length-1||x>=r[0].length-1||me.island.portals[x+','+y])};
+const putAt=(x,y,c)=>{if(!okc(x,y))return false;const r=me.island.rows,b=r[y][x];if(b==c)return false;r[y]=r[y].slice(0,x)+c+r[y].slice(x+1);BM.h.push({x,y,b,a:c});if(BM.h.length>60)BM.h.shift();return true};
+const dir=()=>{const f=typeof fdv=='function'?fdv():(me.fd||{x:0,y:1}),ax=Math.abs(f.x)>Math.abs(f.y);return[ax?Math.sign(f.x):0,ax?0:(Math.sign(f.y)||1)]};
+const cellsFor=m=>{const[x,y]=fc(),[sx,sy]=dir(),o=[];if(m[0]=='l')for(let i=0;i<+m.slice(1);i++)o.push([x+sx*i,y+sy*i]);else if(m[0]=='s')for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++)o.push([x+i,y+j]);else o.push([x,y]);return o};
+Object.assign(api,{bMode:m=>{BM.mode=m;uiB()},placeLine:(t,n)=>{if(me.l!='isl')return;cellsFor('l'+n).forEach(([x,y])=>putAt(x,y,t));sv()},islUndo:()=>{const h=BM.h.pop();if(!h){toast('Нечего отменять');return}const r=me.island.rows;r[h.y]=r[h.y].slice(0,h.x)+h.b+r[h.y].slice(h.x+1);const ia=tItem(h.a),ib=tItem(h.b);if(ia)api.give(ia.id);if(ib&&me.inv[ib.id]>0)api.consume(ib.id);sv()}});
+const _u=useItem;useItem=function(it){if(me.l=='isl'&&it&&it.tile&&!it.u&&BM.mode!='1'){let n=0;cellsFor(BM.mode).forEach(([x,y])=>{if((me.inv[it.id]||0)>0&&putAt(x,y,it.tile)){api.consume(it.id);n++}});if(n)sv();else toast('Нет места или блоков');return}return _u.apply(this,arguments)};
+for(const k of['place','dig']){const o=api[k];if(o)api[k]=function(){const[x,y]=fc(),b=me.l=='isl'?chAt(x,y):null,r=o.apply(this,arguments);if(b!=null&&chAt(x,y)!=b){BM.h.push({x,y,b,a:chAt(x,y)});if(BM.h.length>60)BM.h.shift()}return r}}
+const pn=H('div','position:fixed;top:104px;left:6px;right:6px;z-index:50;display:none;flex-direction:column;gap:5px;background:#1d1a38ee;border:2px solid #7ee0ff;border-radius:14px;padding:6px;font:13px system-ui;color:#fff');document.body.append(pn);
+const bt=(t,f,on)=>{const b=H('button','flex:none;min-width:42px;min-height:40px;border:0;border-radius:9px;color:#fff;font:inherit;background:'+(on?'#2fa86b':'#3b3570'),t);b.onclick=f;return b};let sig='';
+function uiB(){pn.innerHTML='';const r1=H('div','display:flex;gap:5px;overflow-x:auto'),r2=H('div','display:flex;gap:5px;overflow-x:auto');
+ r1.append(bt('⛏',()=>api.dig&&api.dig()),bt('↩',api.islUndo),bt('🧲',()=>{const c=chAt(...fc()),i=tItem(c);if(i&&me.inv[i.id]>0){me.sel=i.id;try{updHand()}catch(e){}}else toast('Нет такого блока в рюкзаке')}),bt('▦',()=>{BM.grid=!BM.grid;uiB()},BM.grid));
+ [['1','•'],['l3','━3'],['l5','━5'],['s3','▦3×3']].forEach(([m,t])=>r1.append(bt(t,()=>api.bMode(m),BM.mode==m)));
+ Object.entries(me.inv||{}).forEach(([id,n])=>{const i=world.items.find(x=>x.id==id);if(i&&i.tile&&n>0)r2.append(bt((i.e||'🧱')+' '+n,()=>{me.sel=id;try{updHand()}catch(e){}uiB()},me.sel==id))});pn.append(r1,r2)}
+setInterval(()=>{try{const on=me&&me.l=='isl';pn.style.display=on?'flex':'none';if(!on)return;const s=JSON.stringify(me.inv)+me.sel+BM.mode;if(s!=sig){sig=s;uiB()}}catch(e){}},500);
+const _dn=drawNpcs;drawNpcs=function(t){_dn.apply(this,arguments);if(me.l!='isl')return;const[x,y]=fc(),X=Math.floor(me.x),Y=Math.floor(me.y);cx.save();if(BM.grid){cx.strokeStyle='#ffffff26';cx.lineWidth=1;cx.beginPath();for(let i=-9;i<=10;i++){cx.moveTo((X+i)*T,(Y-9)*T);cx.lineTo((X+i)*T,(Y+10)*T);cx.moveTo((X-9)*T,(Y+i)*T);cx.lineTo((X+10)*T,(Y+i)*T)}cx.stroke()}cx.strokeStyle='#ffe066';cx.lineWidth=3;cellsFor(BM.mode).forEach(([a,b])=>cx.strokeRect(a*T+2,b*T+2,T-4,T-4));cx.restore()};
+/* ===== 🎭 анимация действий и эмоций ===== */
+const AN={'😊':[t=>[0,-Math.abs(Math.sin(t/160))*8,0,1,1]],'😢':[t=>[0,3,Math.sin(t/400)*.05,1,.94],'💧'],'😡':[t=>[Math.sin(t/30)*3,0,0,1,1],'💢'],'👋':[t=>[0,0,Math.sin(t/120)*.14,1,1]],'🤗':[t=>[0,0,0,1+.1*Math.sin(t/200),1-.07*Math.sin(t/200)],'💞'],'🍎':[t=>[0,-Math.abs(Math.sin(t/200))*5,0,1,1]],'😂':[t=>[0,-Math.abs(Math.sin(t/90))*10,Math.sin(t/70)*.07,1,1]],'👏':[t=>[0,0,0,1+.07*Math.abs(Math.sin(t/70)),1]],'🎉':[t=>[0,-Math.abs(Math.sin(t/140))*18,Math.sin(t/140)*.15,1,1],'🎊'],'💖':[t=>{const s=1+.09*Math.sin(t/180);return[0,0,0,s,s]},'💖'],'🖐':[t=>[0,-Math.abs(Math.sin(t/150))*6,Math.sin(t/150)*.1,1,1]],'😴':[t=>[0,7,.35,1,1],'💤']};
+const FS={};
+try{const _p=pony;pony=function(x,y,c,k,n,s,f,t,an,o){const m=an&&an.e&&AN[an.e];if(!m){return _p.apply(this,arguments)}
+ if(an.id!=null&&m[1]&&(!FS[an.id]||t-FS[an.id]>(an.e=='😴'?1100:an.e=='😢'?700:500))){FS[an.id]=t;fx.push({e:m[1],x:x+(Math.random()-.5)*30,y:y-30,t0:performance.now()})}
+ const a=m[0](t),d=a;cx.save();cx.translate(x+d[0],y+d[1]+32);cx.rotate(d[2]);cx.scale(d[3],d[4]);cx.translate(-x,-y-32);const r=_p.apply(this,arguments);cx.restore();return r}}catch(e){}
+/* ===== 🧱 библиотека блоков, одежда, интерфейс ===== */
+const rnd=s=>()=>(s=(s*16807)%2147483647)/2147483647;
+const tex=p=>{const c=document.createElement('canvas');c.width=c.height=16;const g=c.getContext('2d'),r=rnd(p[0].length*977+p[3].charCodeAt(2)*31+p[4].charCodeAt(3)),px=(x,y,w,h,col)=>{g.fillStyle=col;g.fillRect(x,y,w,h)},c2=p[4];g.fillStyle=p[3];g.fillRect(0,0,16,16);
+ switch(p[5]){case'noise':for(let i=0;i<40;i++)px(r()*16|0,r()*16|0,1,1,c2);break;case'bricks':for(let y=0;y<16;y+=4){px(0,y,16,1,c2);for(let x=(y/4%2)*4;x<16;x+=8)px(x,y,1,4,c2)}break;case'planks':for(let y=0;y<16;y+=4)px(0,y,16,1,c2);for(let i=0;i<10;i++)px(r()*14|0,r()*16|0,2,1,c2);break;case'tiles':for(let y=0;y<16;y+=8)for(let x=0;x<16;x+=8)if((x+y)%16==0)px(x,y,8,8,c2);break;case'stripes':for(let y=1;y<16;y+=4)px(0,y,16,2,c2);break;case'dots':for(let i=0;i<22;i++)px(r()*15|0,r()*15|0,2,2,c2);break;case'wave':for(let y=2;y<16;y+=5)for(let x=0;x<16;x+=4)px(x,y+(x/4%2),3,1,c2);break;case'blades':for(let i=0;i<26;i++){const x=r()*16|0,y=r()*13|0;px(x,y,1,3,c2)}break;case'cracks':for(let i=0;i<5;i++){let x=r()*16|0,y=r()*16|0;for(let j=0;j<6;j++){px(x,y,1,1,c2);x+=(r()*3|0)-1;y+=(r()*3|0)-1}}break;case'border':px(0,0,16,1,c2);px(0,15,16,1,c2);px(0,0,1,16,c2);px(15,0,1,16,c2);break;case'cross':px(0,0,16,1,c2);px(0,7,16,2,c2);px(7,0,2,16,c2);break;case'wire':px(0,7,16,2,c2);px(7,0,2,16,c2);break;case'spike':for(let x=1;x<16;x+=4)for(let y=2;y<16;y+=6)px(x,y,2,4,c2);break}
+ if(p[6]){g.font='13px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(p[6],8,9)}return c};
+const S=(m)=>BK.pack([{h:'',l:m}]),stp=(...b)=>M=>({stp:S(b.map(f=>typeof f=='function'?f(M):f))}),tch=(...b)=>M=>({tch:S(b.map(f=>typeof f=='function'?f(M):f))});
+const sf=k=>M=>N('setfront',{t:M[k]});
+/* [ключ, имя, категория, цвет1, цвет2, узор, эмодзи, свойства, скрипт, пара] */
+const TP=[
+['path','Тропинка','🌍','#b98e5a','#a47c4a','noise','',{sp:1.25}],['sand','Песок','🌍','#e8d28a','#d4bd72','noise','',{sp:.85}],['mud','Грязь','🌍','#6b4a2f','#563a22','noise','',{sp:.6}],['gravel','Гравий','🌍','#9a9a9a','#777777','dots','',{}],['snow','Снег','🌍','#f4f8ff','#d6e4f5','noise','',{sp:.8}],['ice','Лёд','🌍','#bfe8ff','#8fcdf0','cracks','',{sp:1.4}],['cobble','Булыжник','🌍','#8d8d8d','#666666','bricks','',{}],['slab','Каменная плитка','🌍','#b8b2a6','#8a847a','tiles','',{}],['wfloor','Деревянный пол','🌍','#b5835a','#8a5f3a','planks','',{}],['carpet','Красный ковёр','🌍','#a8323e','#7a2230','stripes','',{}],['grassL','Светлая трава','🌍','#7ccf5a','#5fb243','blades','',{}],['grassD','Тёмная трава','🌍','#3f8f3a','#2d6d2b','blades','',{}],['meadow','Цветочная поляна','🌍','#6cc24f','#4ea03a','blades','🌼',{},stp(N('effect',{e:'regen',s:3}))],['moss','Мох','🌍','#4f7a3a','#3a5e2a','noise','',{sp:.9}],
+['wallS','Каменная стена','🧱','#7d7d85','#5a5a62','bricks','',{b:1}],['wallB','Кирпичная стена','🧱','#b5533c','#8a3a27','bricks','',{b:1}],['wallW','Деревянная стена','🧱','#9c6b3e','#744a27','planks','',{b:1}],['fence','Забор','🧱','#7ccf5a','#c79a5b','stripes','',{b:1,hb:[0,.3,1,.7]}],['hedge','Живая изгородь','🧱','#2f7a2f','#1f5a1f','blades','',{b:1,hb:[.05,.05,.95,.95]}],['glass','Стекло','🧱','#bfeaf5','#8ccbe0','border','',{b:1}],['wallI','Ледяная стена','🧱','#aee4f7','#7cc4e0','cracks','',{b:1}],['marble','Мрамор','🧱','#ecebf0','#c9c7d3','cracks','',{b:1}],['dark','Тёмный камень','🧱','#3b3b46','#2a2a33','bricks','',{b:1}],['roof','Крыша','🧱','#a33b2f','#7a281f','bricks','',{b:1}],
+['deep','Глубокая вода','🌊','#2e6fd1','#2358a8','wave','',{b:1}],['shallow','Мелководье','🌊','#5aa9f0','#3f8fd9','wave','',{sp:.6}],['swamp','Болото','🌊','#5a6b3a','#3f4e28','noise','',{sp:.5},stp(N('effect',{e:'slow',s:3}))],['lava','Лава','🌊','#e8501a','#ffb020','wave','',{gl:{r:3,c:'#ff7a30',a:60}},stp(N('stadd',{s:'hp',v:-20}),N('shake',{ms:300}),N('flash',{c:'#ff4400',s:.3}))],['spikes','Шипы','🌊','#7a7a7a','#cc3333','spike','',{},stp(N('stadd',{s:'hp',v:-8}),N('shake',{ms:150}))],['toxic','Ядовитая лужа','🌊','#7bd23a','#4da31f','wave','',{sp:.8},stp(N('stadd',{s:'hp',v:-3}),N('effect',{e:'poison',s:3}))],
+['tree','Дерево','🌳','#6cc24f','#4ea03a','blades','🌳',{b:1,hb:[.3,.4,.7,1]}],['pine','Ёлка','🌳','#6cc24f','#4ea03a','blades','🌲',{b:1,hb:[.3,.4,.7,1]}],['palm','Пальма','🌳','#e8d28a','#d4bd72','noise','🌴',{b:1,hb:[.35,.4,.65,1]}],['rock','Камень','🌳','#6cc24f','#4ea03a','blades','🪨',{b:1,hb:[.1,.2,.9,.95]}],['bush','Куст','🌳','#6cc24f','#4ea03a','blades','🌿',{b:1,hb:[.1,.3,.9,.95]}],['flower','Цветок','🌳','#6cc24f','#4ea03a','blades','🌷',{}],['mush','Грибы','🌳','#4f7a3a','#3a5e2a','noise','🍄',{},tch(N('subt',{t:'Грибы выглядят съедобными…',s:2}))],['cactus','Кактус','🌳','#e8d28a','#d4bd72','noise','🌵',{b:1,hb:[.25,.2,.75,.95]},tch(N('stadd',{s:'hp',v:-3}),N('subt',{t:'Ай! Колючки',s:1.5}))],['hay','Сено','🌳','#d8b84a','#b89a30','stripes','🌾',{}],['log','Бревно','🌳','#8a5a2f','#6a4220','planks','🪵',{b:1}],
+['bed','Кровать','🛋','#b5835a','#8a5f3a','planks','🛏',{b:1},tch(N('sleep'),N('stadd',{s:'hp',v:30}),N('subt',{t:'Ты выспался',s:2}))],['table','Стол','🛋','#b5835a','#8a5f3a','planks','🍽',{b:1}],['chair','Стул','🛋','#b5835a','#8a5f3a','planks','🪑',{b:1,hb:[.2,.2,.8,.9]}],['shelf','Книжный шкаф','🛋','#9c6b3e','#744a27','planks','📚',{b:1},tch(N('subt',{t:'Ты почитал книгу и узнал новое',s:2.5}),N('stadd',{s:'en',v:-5}))],['chest','Сундук','🛋','#b5835a','#8a5f3a','planks','📦',{b:1},tch(N('rain',{e:'💰'}),N('ach',{id:'chest',t:'Нашёл сундук'}))],['barrel','Бочка','🛋','#b5835a','#8a5f3a','planks','🛢',{b:1,hb:[.15,.1,.85,.95]}],['crate','Ящик','🛋','#a8783a','#8a5f3a','planks','🗃',{b:1}],['fire','Камин','🛋','#5a5a62','#3b3b46','bricks','🔥',{b:1,gl:{r:4,c:'#ff9a40',a:70}},tch(N('stadd',{s:'tmp',v:30}),N('subt',{t:'Тепло!',s:1.5}))],['torch','Факел','🛋','#9c6b3e','#744a27','planks','🕯',{b:1,gl:{r:3,c:'#ffd27a',a:65}}],['lantern','Фонарь','🛋','#5a5a62','#3b3b46','bricks','🏮',{b:1,gl:{r:4,c:'#ffd27a',a:70}}],['sofa','Диван','🛋','#a8323e','#7a2230','planks','🛋',{b:1}],['pot','Цветочный горшок','🛋','#b5835a','#8a5f3a','planks','🪴',{b:1}],
+['doorC','Дверь закрытая','⚙','#9c6b3e','#744a27','planks','🚪',{b:1},tch(sf('doorO'),N('beep',{f:300,ms:120})),'doorO'],['doorO','Дверь открытая','⚙','#7a5530','#5a3c20','border','',{},tch(sf('doorC'),N('beep',{f:240,ms:120}))],['gateC','Ворота закрытые','⚙','#7d7d85','#5a5a62','stripes','',{b:1},tch(sf('gateO')),'gateO'],['gateO','Ворота открытые','⚙','#b8b2a6','#7d7d85','border','',{},tch(sf('gateC'))],['tele','Телепорт-плита','⚙','#4a2f8a','#b48aff','border','🌀',{gl:{r:2,c:'#b48aff',a:50}},stp(N('markgo',{n:'Дом'}),N('flash',{c:'#b48aff',s:.5}))],['tramp','Батут','⚙','#c0392b','#ffdd55','border','',{},stp(N('move',{x:0,y:-3}),N('beep',{f:520,ms:120}))],['speedP','Плита ускорения','⚙','#2f6fa8','#7ee0ff','stripes','⏩',{},stp(N('effect',{e:'spd',s:4}))],['healP','Плита лечения','⚙','#2f8a4a','#9fe8b0','border','➕',{},stp(N('stadd',{s:'hp',v:10}),N('flash',{c:'#44ff88',s:.3}))],['giftP','Плита-сюрприз','⚙','#c9a52b','#ffe066','border','🎁',{},stp(N('chance',{p:30},[N('rain',{e:'🎁'}),N('ach',{id:'gift',t:'Сюрприз!'})]))],['sign','Знак','⚙','#6cc24f','#c79a5b','stripes','🪧',{b:1},tch(N('subt',{t:'Здесь могла быть надпись',s:2.5}))],['bell','Колокол','⚙','#5a5a62','#d8b84a','border','🔔',{b:1},tch(N('beep',{f:880,ms:400}),N('sig',{n:'колокол',v:1}))],['btn','Кнопка-плита','⚙','#7d7d85','#cc3333','border','🔘',{},stp(N('sig',{n:'кнопка',v:1}),N('beep',{f:440,ms:100}))],
+['wire','Провод','⚡','#3b3b46','#d08a2a','wire','',{el:'wire',u:'wireOn'},null,'wireOn'],['wireOn','Провод под током','⚡','#3b3b46','#ffe066','wire','',{el:'wireon',u:'wire',gl:{r:1.5,c:'#ffe066',a:40}}],['gen','Генератор','⚡','#444455','#ffcc33','border','⚡',{b:1,el:'src',p:5}],['solar','Солнечная панель','⚡','#1f3f8a','#7ee0ff','tiles','☀',{b:1,el:'src',p:2}],['lampOff','Лампа','⚡','#3b3b46','#d08a2a','wire','💡',{el:'load',u:'lampOn',n:1},null,'lampOn'],['lampOn','Лампа горит','⚡','#5a5030','#ffe066','wire','💡',{el:'loadon',u:'lampOff',n:1,gl:{r:4.5,c:'#ffe27a',a:75}}],['swOff','Выключатель','⚡','#3b3b46','#cc3333','wire','🔘',{el:'sw',u:'swOn'},null,'swOn'],['swOn','Выключатель включён','⚡','#3b3b46','#44cc66','wire','🔘',{el:'swon',u:'swOff'}],['egateC','Электроворота','⚡','#5a5a62','#d08a2a','stripes','',{b:1,el:'load',u:'egateO',n:2},null,'egateO'],['egateO','Электроворота открыты','⚡','#8a8a92','#ffe066','border','',{el:'loadon',u:'egateC',n:2}]];
+const CN={'🌍':'Земля и пол','🧱':'Стены','🌊':'Вода и опасное','🌳':'Природа','🛋':'Интерьер','⚙':'Механизмы','⚡':'Электроника'};
+const POOL=[...'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюяΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψω'];
+const inst=(keys)=>{const M={},want=new Set(keys);TP.forEach(p=>{if(want.has(p[0])&&p[9])want.add(p[9])});let n=0;
+ const have={};Object.entries(world.tiles).forEach(([c,d])=>{if(d.lib)have[d.lib]=c});const free=()=>POOL.find(c=>!world.tiles[c]&&!Object.values(M).includes(c));
+ TP.forEach(p=>{if(!want.has(p[0]))return;M[p[0]]=have[p[0]]||free()});TP.forEach(p=>{if(have[p[0]]){M[p[0]]=have[p[0]]}});
+ TP.forEach(p=>{if(!want.has(p[0])||have[p[0]])return;const c=M[p[0]];if(!c)return;const f=p[7],d={n:p[1],lib:p[0]};if(f.b)d.b=1;if(f.hb)d.hb=f.hb;if(f.sp)d.sp=f.sp;if(f.el){d.el=f.el;if(f.p)d.p=f.p;if(f.n)d.n2=0}if(f.gl)d.gl=f.gl;
+  world.tiles[c]=d;world.tex['t'+c]={fps:4,fr:[tex(p).toDataURL()]};n++;
+  if(!(world.items||[]).some(i=>i.tile==c)){world.items=world.items||[];world.items.push({id:'b_'+p[0],n:p[1],e:p[6]||p[2],cost:3,tile:c})}});
+ TP.forEach(p=>{const c=M[p[0]],d=c&&world.tiles[c];if(!d||!want.has(p[0])||d.done)return;const f=p[7];if(f.u&&M[f.u])d.u=M[f.u];if(f.el&&f.n)d.n=f.n;d.done=1;if(p[8])try{Object.assign(d,p[8](M))}catch(e){}});
+ try{loadTex()}catch(e){}return n};
+const CL=[['cap_red','Красная шапка','head',[[4,0,8,3,'#c0392b'],[3,3,10,1,'#ffffff']]],['cap_blue','Синяя кепка','head',[[4,1,8,3,'#2f6fa8'],[2,4,12,1,'#1f4f88']]],['tophat','Цилиндр','head',[[5,0,6,4,'#222222'],[3,4,10,1,'#222222'],[5,3,6,1,'#c0392b']]],['crown','Корона','head',[[4,2,8,3,'#ffd23f'],[4,1,1,1,'#ffd23f'],[7,0,2,2,'#ffd23f'],[11,1,1,1,'#ffd23f']]],['helmet','Шлем','head',[[3,1,10,4,'#9aa0a8'],[3,5,2,2,'#9aa0a8'],[11,5,2,2,'#9aa0a8']]],['hood','Капюшон','head',[[3,0,10,5,'#3b6f4a'],[3,5,2,4,'#3b6f4a'],[11,5,2,4,'#3b6f4a']]],['beret','Берет','head',[[3,1,10,3,'#8a2f6a'],[7,0,2,1,'#8a2f6a']]],['band','Повязка','head',[[3,3,10,1,'#e04a4a']]],['tshirt','Футболка','body',[[3,6,10,6,'#4a90d9'],[1,6,2,3,'#4a90d9'],[13,6,2,3,'#4a90d9']]],['sweater','Свитер','body',[[3,6,10,7,'#c9742f'],[1,6,2,5,'#c9742f'],[13,6,2,5,'#c9742f'],[3,6,10,1,'#e8a560']]],['dress','Платье','body',[[4,6,8,3,'#d94a8a'],[3,9,10,4,'#d94a8a']]],['jacket','Куртка','body',[[3,6,10,7,'#556b2f'],[1,6,2,5,'#556b2f'],[13,6,2,5,'#556b2f'],[7,6,2,7,'#3c4d22']]],['cloak','Плащ','body',[[2,6,12,8,'#6a2fa8'],[7,6,2,8,'#4a1f78']]],['apron','Фартук','body',[[4,7,8,6,'#f2efe6'],[6,7,4,1,'#c9c4b4']]],['armor','Броня','body',[[3,6,10,7,'#8a9098'],[1,6,2,3,'#8a9098'],[13,6,2,3,'#8a9098'],[7,8,2,3,'#c9d0d8']]],['overall','Комбинезон','body',[[3,7,10,6,'#2f5fa8'],[4,6,2,1,'#2f5fa8'],[10,6,2,1,'#2f5fa8']]],['scarf','Шарф','body',[[3,5,10,2,'#cc3a3a'],[10,7,2,4,'#cc3a3a']]],['boots','Сапоги','feet',[[3,13,4,3,'#6a4220'],[9,13,4,3,'#6a4220']]],['sneakers','Кроссовки','feet',[[3,14,4,2,'#ffffff'],[9,14,4,2,'#ffffff'],[3,15,4,1,'#cc3a3a'],[9,15,4,1,'#cc3a3a']]],['slippers','Тапочки','feet',[[3,14,4,2,'#d48ab8'],[9,14,4,2,'#d48ab8']]],['wellies','Резиновые сапоги','feet',[[3,12,4,4,'#e8c32f'],[9,12,4,4,'#e8c32f']]]];
+const AC=[['bow','Бантик','🎀'],['mask','Маска','😷'],['cowboy','Шляпа ковбоя','🤠'],['wings','Крылья','🪽'],['halo','Нимб','😇'],['hornsA','Рожки','😈'],['sunhat','Соломенная шляпа','👒'],['grad','Шапочка выпускника','🎓'],['star','Звезда','⭐'],['cat','Кошачьи ушки','🐱'],['flowerA','Цветок в волосах','🌺'],['monocle','Монокль','🧐']];
+const addClo=()=>{world.clo=world.clo||[];world.acc=world.acc||[];let n=0;CL.forEach(([id,nm,ly,rs])=>{if(world.clo.some(c=>c.id==id))return;const c=document.createElement('canvas');c.width=c.height=16;const g=c.getContext('2d');rs.forEach(([x,y,w,h,col])=>{g.fillStyle=col;g.fillRect(x,y,w,h)});world.clo.push({id,n:nm,ly});world.tex['clo_'+id]={fps:4,fr:[c.toDataURL()]};n++});AC.forEach(([id,nm,e])=>{if(!world.acc.some(a=>a.id==id)){world.acc.push({id,n:nm,e});n++}});try{loadTex()}catch(e){}return n};
+const lib=()=>{const o=H('div','position:fixed;inset:0;z-index:99996;background:#000c;overflow:auto;padding:10px;color:#fff;font:14px system-ui'),draw=()=>{o.innerHTML='';const top=H('div','position:sticky;top:0;background:#26224a;padding:8px;border-radius:12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;z-index:2');top.append(H('b','flex:1;font-size:16px','🧱 Библиотека блоков ('+TP.length+') и одежды'));
+  const b=(t,f)=>{const x=H('button','background:#3b3570;color:#fff;border:0;border-radius:10px;padding:10px 12px;font:inherit',t);x.onclick=f;top.append(x)};
+  b('＋ Все блоки',()=>{toast('Добавлено блоков: '+inst(TP.map(p=>p[0]))+'. Нажмите «Выпуск», чтобы игроки получили их');draw();try{renderTiles()}catch(e){}});b('👕 Одежда и аксессуары',()=>{toast('Добавлено: '+addClo())});b('✕',()=>o.remove());o.append(top);
+  const have=new Set(Object.values(world.tiles).map(d=>d.lib));Object.keys(CN).forEach(cat=>{o.append(H('div','margin:14px 4px 6px;font-weight:bold;color:#7ee0ff',CN[cat]));const g=H('div','display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px');TP.filter(p=>p[2]==cat).forEach(p=>{const k=H('div','background:#2f2b52;border-radius:12px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center'),c=tex(p);c.style.cssText='width:56px;height:56px;image-rendering:pixelated;border-radius:6px';const f=p[7];k.append(c,H('b','font-size:13px',p[1]),H('small','opacity:.7',(f.b?'🧱 твёрдый ':'')+(f.el?'⚡ ':'')+(p[8]?'🧩 скрипт':'')));const a=H('button','background:'+(have.has(p[0])?'#2fa86b':'#3b3570')+';color:#fff;border:0;border-radius:8px;padding:8px;font:inherit;width:100%',have.has(p[0])?'✓ в мире':'＋ в мир');a.onclick=()=>{inst([p[0]]);draw();try{renderTiles()}catch(e){}};k.append(a);g.append(k)});o.append(g)});};draw();document.body.append(o)};
+/* кнопки: библиотека, полный экран, редактирование скриптов блока */
+const _rt=renderTiles;renderTiles=function(){_rt.apply(this,arguments);const a=$$('#admb');if(!a)return;const lb=H('button','width:100%;min-height:48px;background:#e0408a;color:#fff;border:0;border-radius:12px;font:bold 15px system-ui;margin-bottom:8px','🧱 Библиотека блоков (70+) и одежды');lb.onclick=lib;a.prepend(lb);
+ a.querySelectorAll('[data-rm]').forEach(b=>{const c=b.dataset.rm,d=world.tiles[c],card=b.closest('.it');if(!d||!card)return;const r=H('div','display:flex;gap:6px;flex-wrap:wrap;margin-top:6px');
+  [['stp','🧩 Шаг'],['tch','🧩 Касание']].forEach(([k,t])=>{const x=H('button','',(d[k]?'✓ ':'')+t);x.onclick=()=>{const ta=document.createElement('textarea');ta.value=d[k]||'';ta.addEventListener('input',()=>{d[k]=ta.value});BK.open(ta,false)};r.append(x)});
+  const sp=H('input','width:70px');sp.type='number';sp.step='.1';sp.placeholder='скор.';sp.value=d.sp||'';sp.onchange=()=>{d.sp=+sp.value||undefined};r.append(sp);card.append(r)})};
+const fs=()=>{const row=$$('#ahw .row');if(!row||$$('#aFs'))return;const b=H('button','','⛶');b.id='aFs';b.title='На весь экран';b.onclick=()=>{const a=$$('#adm');a.classList.toggle('fs');try{if(a.classList.contains('fs')){if(!document.fullscreenElement)document.documentElement.requestFullscreen()}else if(document.fullscreenElement)document.exitFullscreen()}catch(e){}};row.insertBefore(b,$$('#aX'))};
+new MutationObserver(fs).observe(document.body,{childList:true,subtree:true});fs();
+})();
+
+</script>
+<script>
+(()=>{
+const BK=window.BK,DD=BK.D,O=BK.O,BR=BK.BKR,CT=BK.CT,sv=()=>{try{save('pm_me',me)}catch(e){}},R=(i,c,l,f,d,j)=>DD(i,'r',c,l,f,d,j),E1={els:1},V=x=>`(typeof ${x}!='undefined'?${x}:0)`;
+CT.x11=['🧰 Ещё блоки','#5a8fd6'];const X='x11';
+const SL=()=>[['hp','❤ здоровье'],['hun','🍗 сытость'],['en','⚡ энергия'],['tmp','🌡 тепло']],IT=()=>O.items(),TL=()=>O.tile(),LC=()=>Object.entries(world.locs||{}).map(([k,l])=>[k,l.n||k]);
+const rows=()=>((L())||{}).rows||[],tn=t=>(world.tiles[t]||{}).n||t,F=(a,b)=>String(a)+b;
+const cells=t=>{const o=[];rows().forEach((r,y)=>{for(let x=0;x<r.length;x++)if(r[x]==t)o.push([x,y])});return o},ST=(x,y,c)=>api.setTile(x,y,c),CH=(x,y)=>(rows()[y]||'')[x],each=(x1,y1,x2,y2,f)=>{for(let x=Math.min(x1,x2);x<=Math.max(x1,x2);x++)for(let y=Math.min(y1,y2);y<=Math.max(y1,y2);y++)f(x,y)};
+const CDN={},SW={},LT={},NT={C:261,D:293,E:329,F:349,G:392,A:440,B:493};
+const gl=k=>{try{const a=JSON.parse(api.gget(k)||'[]');return Array.isArray(a)?a:[]}catch(e){return[]}};
+Object.assign(api,{
+ xpAdd:n=>{me.xp=(me.xp||0)+ +n;sv();toast('⭐ +'+n+' опыта')},bar:(v,n)=>{n=+n||10;const k=Math.round(Math.max(0,Math.min(100,v))/100*n);return'█'.repeat(k)+'░'.repeat(n-k)},
+ stDrain:(s,n,t)=>{BR.iv.push(setInterval(()=>api.stAdd(s,-n),Math.max(.5,t)*1000))},tileUnder:()=>CH(Math.floor(me.x),Math.floor(me.y))||'',
+ swap2:(a,n,b,m)=>{if(api.has(a)<n)return false;for(let i=0;i<n;i++)api.consume(a);for(let i=0;i<m;i++)api.give(b);return true},
+ clrItem:i=>{while(api.has(i)>0)api.consume(i)},
+ bank:(n,d)=>{n=+n;const k='bank:'+me.n,b=+api.gget(k)||0;if(d>0){if(api.coins(-n))api.gset(k,b+n)}else{const w=Math.min(n,b);api.gset(k,b-w);api.coins(w)}},
+ fillIf:(t,a,x1,y1,x2,y2)=>each(x1,y1,x2,y2,(x,y)=>{if(!a||CH(x,y)==a)ST(x,y,t)}),
+ frame:(t,x1,y1,x2,y2)=>each(x1,y1,x2,y2,(x,y)=>{if(x==Math.min(x1,x2)||x==Math.max(x1,x2)||y==Math.min(y1,y2)||y==Math.max(y1,y2))ST(x,y,t)}),
+ circle:(t,cx0,cy0,r)=>each(cx0-r,cy0-r,cx0+r,cy0+r,(x,y)=>{if(Math.hypot(x-cx0,y-cy0)<=r)ST(x,y,t)}),
+ scatter:(t,a,n)=>{const c=cells(a);for(let i=0;i<n&&c.length;i++){const k=Math.floor(Math.random()*c.length),[x,y]=c.splice(k,1)[0];ST(x,y,t)}},
+ swapT:(a,b)=>{const A=cells(a),B=cells(b);A.forEach(([x,y])=>ST(x,y,b));B.forEach(([x,y])=>ST(x,y,a))},
+ cntArea:(t,x1,y1,x2,y2)=>{let n=0;each(x1,y1,x2,y2,(x,y)=>{if(CH(x,y)==t)n++});return n},
+ nearT:t=>cells(t).sort((a,b)=>Math.hypot(a[0]+.5-me.x,a[1]+.5-me.y)-Math.hypot(b[0]+.5-me.x,b[1]+.5-me.y))[0],
+ clearR:(a,b,r)=>cells(a).forEach(([x,y])=>{if(Math.hypot(x+.5-me.x,y+.5-me.y)<=r)ST(x,y,b)}),
+ grow1:(a,b,p)=>{cells(b).forEach(([x,y])=>[[1,0],[-1,0],[0,1],[0,-1]].forEach(([i,j])=>{if(CH(x+i,y+j)==a&&Math.random()*100<p)ST(x+i,y+j,b)}))},
+ cd:(k,s)=>{if(Date.now()<(CDN[k]||0))return false;CDN[k]=Date.now()+s*1000;return true},cdLeft:k=>Math.max(0,Math.ceil(((CDN[k]||0)-Date.now())/1000)),
+ daily:k=>{const d=new Date().toDateString();me.fl=me.fl||{};if(me.fl['dy:'+k]==d)return false;me.fl['dy:'+k]=d;sv();return true},
+ since:(k,s)=>{const n=Date.now();if(n-(LT[k]||0)>=s*1000){LT[k]=n;return true}return false},
+ mm:s=>{s=Math.max(0,Math.floor(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')},
+ mathf:(f,a)=>({abs:Math.abs,sqrt:Math.sqrt,floor:Math.floor,ceil:Math.ceil,round:Math.round,log:Math.log,exp:Math.exp,sin:x=>Math.sin(x),cos:x=>Math.cos(x)}[f]||(x=>x))(+a),
+ big:(t,s)=>{const d=document.createElement('div');d.textContent=t;d.style.cssText='position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:99950;pointer-events:none;color:#fff;font:bold 12vw system-ui;text-shadow:0 4px 18px #000;text-align:center';document.body.append(d);d.animate([{opacity:0,transform:'scale(.6)'},{opacity:1,transform:'scale(1)'},{opacity:1},{opacity:0}],{duration:s*1000}).onfinish=()=>d.remove()},
+ tint:(c,a)=>{let d=document.getElementById('bktint');if(!d){d=document.createElement('div');d.id='bktint';d.style.cssText='position:fixed;inset:0;z-index:45;pointer-events:none';document.body.append(d)}d.style.background=c;d.style.opacity=Math.max(0,Math.min(100,a))/100},
+ tintOff:()=>{const d=document.getElementById('bktint');if(d)d.remove()},
+ sfx:n=>{const S={coin:[[988,80],[1319,160]],hit:[[160,120],[90,160]],power:[[440,80],[554,80],[659,80],[880,200]],error:[[220,150],[180,250]],win:[[523,120],[659,120],[784,120],[1047,300]]}[n]||[];let t=0;S.forEach(([f,m])=>{setTimeout(()=>api.beep(f,m),t);t+=m+20})},
+ melody:s=>{let t=0;String(s).trim().split(/\s+/).forEach(n=>{const f=(NT[n[0].toUpperCase()]||0)*Math.pow(2,(+(n.slice(-1))||4)-4)*(n[1]=='#'?1.0595:1);if(f)setTimeout(()=>api.beep(f,260),t);t+=300})},
+ popup:(t,b,f)=>api.panel(t,p=>{p.btn(b,()=>{p.close();f()})}),
+ hudBlink:(k,t)=>{let on=0;api.hud(k,t);BR.iv.push(setInterval(()=>{on=!on;if(on)api.hud(k,t);else api.hudOff(k)},700))},
+ hudClear:()=>{document.querySelectorAll('div[style*="z-index: 55"]').forEach(d=>d.remove())},
+ peersNear:r=>(typeof peers!='undefined'?peers:[]).filter(p=>p.l==me.l&&Math.hypot(p.x-me.x,p.y-me.y)<=r),
+ gPush:(k,v)=>{const a=gl(k);a.push(v);api.gset(k,JSON.stringify(a.slice(-100)))},gShift:k=>{const a=gl(k),v=a.shift();api.gset(k,JSON.stringify(a));return v??''},gPick:k=>{const a=gl(k);return a.length?a[Math.floor(Math.random()*a.length)]:''},
+ gMax:(k,v)=>{if(!(+api.gget(k)>=+v))api.gset(k,+v)},gMin:(k,v)=>{const c=api.gget(k);if(!c||+v<+c)api.gset(k,+v)}});
+/* --- игрок и параметры --- */
+DD('xpadd','s',X,'⭐ дать опыт {n}',{n:'e'},{n:10},A=>`api.xpAdd(${A.n})`);
+R('lvl',X,'уровень игрока (по опыту)',{},{},()=>`(Math.floor(Math.sqrt((me.xp||0)/10))+1)`);
+DD('healall','s',X,'💊 восстановить все параметры до 100',{},{},()=>`["hp","hun","en","tmp"].forEach(function(_k){api.stSet(_k,100)})`);
+R('lowst',X,'{s} ниже {n}?',{s:SL,n:'e'},{n:30},A=>`(api.stGet(${A.s})<${A.n})`);
+DD('stdrain','s',X,'📉 {s} падает на {n} каждые {t} сек',{s:SL,n:'e',t:'e'},{n:1,t:10},A=>`api.stDrain(${A.s},${A.n},${A.t})`);
+R('hpbar',X,'полоска {s} из {n} символов',{s:SL,n:'e'},{n:10},A=>`api.bar(api.stGet(${A.s}),${A.n})`);
+R('tileund',X,'блок под игроком',{},{},()=>`api.tileUnder()`);
+R('tilenm',X,'название блока {t}',{t:TL},{},A=>`(world.tiles[${A.t}]||{}).n`);
+R('pdist',X,'расстояние до клетки x {x} y {y}',{x:'e',y:'e'},{x:5,y:5},A=>`Math.hypot(me.x-${A.x}-.5,me.y-${A.y}-.5)`);
+R('isnear',X,'игрок рядом с клеткой x {x} y {y} (радиус {r})?',{x:'e',y:'e',r:'e'},{x:5,y:5,r:2},A=>`(Math.hypot(me.x-${A.x}-.5,me.y-${A.y}-.5)<=${A.r})`);
+R('pspd',X,'множитель скорости игрока',{},{},()=>`(window.__spd||1)`);
+DD('lookat','s',X,'👀 повернуться к клетке x {x} y {y}',{x:'e',y:'e'},{x:5,y:5},A=>`me.fd={x:Math.sign(${A.x}+.5-me.x),y:Math.sign(${A.y}+.5-me.y)}`);
+/* --- предметы и деньги --- */
+DD('giveN','s',X,'🎁 дать {i} ×{n}',{i:IT,n:'e'},{n:3},A=>`for(var _g=0;_g<${A.n};_g++)api.give(${A.i})`);
+R('hasn',X,'у игрока {i} не меньше {n}?',{i:IT,n:'e'},{n:1},A=>`(api.has(${A.i})>=${A.n})`);
+R('cnti',X,'сколько у игрока {i}',{i:IT},{},A=>`api.has(${A.i})`);
+DD('swapi','c',X,'🔄 обменять {a} ×{n} на {b} ×{m}: если получилось →',{a:IT,n:'e',b:IT,m:'e'},{n:1,m:1},(A,B,E)=>`if(api.swap2(${A.a},${A.n},${A.b},${A.m})){\n${B}\n}else{\n${E}\n}`,E1);
+DD('craft2','c',X,'⚒ скрафтить из {a} и {b} предмет {c}: если получилось →',{a:IT,b:IT,c:IT},{},(A,B,E)=>`if(api.has(${A.a})>0&&api.has(${A.b})>0){api.consume(${A.a});api.consume(${A.b});api.give(${A.c});\n${B}\n}else{\n${E}\n}`,E1);
+DD('giverand','s',X,'🎲 дать случайный предмет из {l} (id через ;)',{l:'e'},{l:'apple;bread'},A=>`api.give(String(${A.l}).split(';').sort(function(){return Math.random()-.5})[0].trim())`);
+DD('clri','s',X,'🗑 убрать все {i}',{i:IT},{},A=>`api.clrItem(${A.i})`);
+R('itnm',X,'название предмета {i}',{i:IT},{},A=>`((world.items.find(function(x){return x.id==${A.i}})||{}).n||'')`);
+R('item',X,'эмодзи предмета {i}',{i:IT},{},A=>`((world.items.find(function(x){return x.id==${A.i}})||{}).e||'')`);
+DD('buy','c',X,'🛒 купить {i} за {p}🪙: если хватило →',{i:IT,p:'e'},{p:5},(A,B,E)=>`if(api.coins(-${A.p})){api.give(${A.i});\n${B}\n}else{\n${E}\n}`,E1);
+DD('pay','c',X,'💰 заплатить {n}🪙: если хватило →',{n:'e'},{n:5},(A,B,E)=>`if(api.coins(-${A.n})){\n${B}\n}else{\n${E}\n}`,E1);
+DD('bankdep','s',X,'🏦 положить в банк {n}🪙',{n:'e'},{n:10},A=>`api.bank(${A.n},1)`);DD('bankwd','s',X,'🏦 снять из банка {n}🪙',{n:'e'},{n:10},A=>`api.bank(${A.n},-1)`);
+R('bankget',X,'🏦 на счёте у игрока',{},{},()=>`(+api.gget('bank:'+me.n)||0)`);
+/* --- карта --- */
+DD('fillif','s',X,'🪣 залить блоком {t} область x{a} y{b} — x{c} y{d}, заменяя только {o}',{t:TL,a:'e',b:'e',c:'e',d:'e',o:()=>[['','любой']].concat(TL())},{a:2,b:2,c:6,d:6},A=>`api.fillIf(${A.t},${A.o},${A.a},${A.b},${A.c},${A.d})`);
+DD('frame','s',X,'▭ рамка из блока {t}: x{a} y{b} — x{c} y{d}',{t:TL,a:'e',b:'e',c:'e',d:'e'},{a:2,b:2,c:8,d:6},A=>`api.frame(${A.t},${A.a},${A.b},${A.c},${A.d})`);
+DD('circle','s',X,'⭕ круг из блока {t}: центр x{x} y{y}, радиус {r}',{t:TL,x:'e',y:'e',r:'e'},{x:8,y:8,r:3},A=>`api.circle(${A.t},${A.x},${A.y},${A.r})`);
+DD('scatter','s',X,'✨ рассыпать блок {t} на {n} случайных клеток блока {a}',{t:TL,n:'e',a:TL},{n:10},A=>`api.scatter(${A.t},${A.a},${A.n})`);
+DD('swapt','s',X,'🔀 поменять местами все блоки {a} и {b}',{a:TL,b:TL},{},A=>`api.swapT(${A.a},${A.b})`);
+R('tcnta',X,'блоков {t} в области x{a} y{b} — x{c} y{d}',{t:TL,a:'e',b:'e',c:'e',d:'e'},{a:0,b:0,c:20,d:20},A=>`api.cntArea(${A.t},${A.a},${A.b},${A.c},${A.d})`);
+R('findx',X,'x ближайшего к игроку блока {t}',{t:TL},{},A=>`((api.nearT(${A.t})||[-1])[0])`);R('findy',X,'y ближайшего к игроку блока {t}',{t:TL},{},A=>`((api.nearT(${A.t})||[0,-1])[1])`);
+R('tdist',X,'расстояние до ближайшего блока {t} (999 — нет)',{t:TL},{},A=>`(function(){var q=api.nearT(${A.t});return q?Math.hypot(q[0]+.5-me.x,q[1]+.5-me.y):999})()`);
+DD('clearR','s',X,'🧹 заменить блок {a} на {b} в радиусе {r} от игрока',{a:TL,b:TL,r:'e'},{r:3},A=>`api.clearR(${A.a},${A.b},${A.r})`);
+DD('grow1','s',X,'🌿 один шаг: блок {b} расползается на соседние {a} с шансом {p}%',{a:TL,b:TL,p:'e'},{p:25},A=>`api.grow1(${A.a},${A.b},${A.p})`);
+R('locw',X,'ширина локации',{},{},()=>`((L().rows[0]||'').length)`);R('loch',X,'высота локации',{},{},()=>`L().rows.length`);R('rowtxt',X,'строка карты номер {y}',{y:'e'},{y:0},A=>`(L().rows[${A.y}]||'')`);
+/* --- время --- */
+DD('cooldown','c',X,'⏱ перезарядка «{k}» {s} сек: если готово →',{k:'e',s:'e'},{k:'удар',s:5},(A,B,E)=>`if(api.cd(${A.k},${A.s})){\n${B}\n}else{\n${E}\n}`,E1);
+R('cdleft',X,'осталось перезарядки «{k}», сек',{k:'e'},{k:'удар'},A=>`api.cdLeft(${A.k})`);
+DD('daily','c',X,'📅 раз в сутки «{k}»: если ещё не брал →',{k:'e'},{k:'награда'},(A,B,E)=>`if(api.daily(${A.k})){\n${B}\n}else{\n${E}\n}`,E1);
+DD('swstart','s',X,'⏱ запустить секундомер {n}',{n:'e'},{n:'забег'},A=>`api.tStart('sw:'+${A.n},86400)`);
+R('swread',X,'секундомер {n}, сек',{n:'e'},{n:'забег'},A=>`(86400-api.tLeft('sw:'+${A.n}))`);
+R('mmss',X,'{s} секунд как мм:сс',{s:'e'},{s:75},A=>`api.mm(${A.s})`);
+R('since',X,'прошло {s} сек с последнего «{k}»? (и сбросить)',{s:'e',k:'e'},{s:5,k:'шаг'},A=>`api.since(${A.k},${A.s})`);
+/* --- числа и текст --- */
+R('mathf',X,'{f} от {a}',{f:()=>[['abs','модуль'],['sqrt','корень'],['floor','вниз'],['ceil','вверх'],['round','округлить'],['log','логарифм'],['exp','экспонента'],['sin','синус'],['cos','косинус']],a:'e'},{a:4},A=>`api.mathf(${A.f},${A.a})`);
+R('avg',X,'среднее списка {l}',{l:'l'},{},A=>`(${A.l}.length?${A.l}.reduce(function(a,b){return a+Number(b)},0)/${A.l}.length:0)`);
+R('lmax',X,'наибольшее в списке {l}',{l:'l'},{},A=>`Math.max.apply(null,${A.l}.map(Number))`);R('lmin',X,'наименьшее в списке {l}',{l:'l'},{},A=>`Math.min.apply(null,${A.l}.map(Number))`);
+R('lcnt',X,'сколько раз {x} в списке {l}',{x:'e',l:'l'},{},A=>`${A.l}.filter(function(q){return q==${A.x}}).length`);
+R('tcnt',X,'сколько раз {b} встречается в тексте {a}',{b:'e',a:'e'},{b:'а',a:'банан'},A=>`(String(${A.a}).split(${A.b}).length-1)`);
+R('tst',X,'текст {a} начинается с {b}?',{a:'e',b:'e'},{},A=>`String(${A.a}).startsWith(${A.b})`);R('ten',X,'текст {a} заканчивается на {b}?',{a:'e',b:'e'},{},A=>`String(${A.a}).endsWith(${A.b})`);
+R('tnum',X,'число {a} с пробелами тысяч',{a:'e'},{a:1234567},A=>`Number(${A.a}).toLocaleString('ru-RU')`);
+R('tcap',X,'с большой буквы {a}',{a:'e'},{a:'привет'},A=>`(function(s){return s.charAt(0).toUpperCase()+s.slice(1)})(String(${A.a}))`);
+R('rndw',X,'случайное слово из {t} (через ;)',{t:'e'},{t:'раз;два;три'},A=>`(function(a){return a[Math.floor(Math.random()*a.length)]})(String(${A.t}).split(';'))`);
+R('norm',X,'{a} из {l}…{h} как число 0–1',{a:'e',l:'e',h:'e'},{a:5,l:0,h:10},A=>`((${A.a}-${A.l})/((${A.h}-${A.l})||1))`);
+R('wrap',X,'{a} по кругу от {l} до {h}',{a:'e',l:'e',h:'e'},{a:12,l:0,h:10},A=>`(function(a,l,h){var w=h-l+1;return l+(((a-l)%w)+w)%w})(${A.a},${A.l},${A.h})`);
+/* --- списки --- */
+DD('lsplit','s',X,'✂ в список {l} положить части текста {t} через {d}',{l:'l',t:'e',d:'e'},{t:'a,b,c',d:','},A=>`${A.l}=String(${A.t}).split(${A.d})`);
+DD('lext','s',X,'➕ добавить в список {l} всё из списка {m}',{l:'l',m:'l'},{},A=>`${A.l}=${A.l}.concat(${A.m})`);
+DD('lrev','s',X,'↕ перевернуть список {l}',{l:'l'},{},A=>`${A.l}.reverse()`);DD('luniq','s',X,'🧽 убрать повторы в списке {l}',{l:'l'},{},A=>`${A.l}=${A.l}.filter(function(q,i,a){return a.indexOf(q)==i})`);
+DD('lins','s',X,'📥 вставить {x} в список {l} на место №{i}',{x:'e',l:'l',i:'e'},{i:1},A=>`${A.l}.splice(${A.i}-1,0,${A.x})`);
+DD('lswp','s',X,'🔃 в списке {l} поменять местами №{a} и №{b}',{l:'l',a:'e',b:'e'},{a:1,b:2},A=>`(function(l,a,b){var t=l[a-1];l[a-1]=l[b-1];l[b-1]=t})(${A.l},${A.a},${A.b})`);
+DD('lfill','s',X,'🧱 сделать список {l} из {n} одинаковых {x}',{l:'l',n:'e',x:'e'},{n:5,x:0},A=>`${A.l}=Array(${A.n}).fill(${A.x})`);
+R('lmid',X,'элементы {a}–{b} списка {l} (текстом)',{a:'e',b:'e',l:'l'},{a:1,b:3},A=>`${A.l}.slice(${A.a}-1,${A.b}).join(', ')`);
+/* --- условия и структура --- */
+DD('ifeq','c',X,'🟰 если {a} равно {b}',{a:'e',b:'e'},{},(A,B,E)=>`if(${A.a}==${A.b}){\n${B}\n}else{\n${E}\n}`,E1);
+DD('ifrng','c',X,'↔ если {a} между {l} и {h}',{a:'e',l:'e',h:'e'},{l:1,h:10},(A,B,E)=>`if(${A.a}>=${A.l}&&${A.a}<=${A.h}){\n${B}\n}else{\n${E}\n}`,E1);
+DD('ifhas','c',X,'🎒 если у игрока {i} ×{n}',{i:IT,n:'e'},{n:1},(A,B,E)=>`if(api.has(${A.i})>=${A.n}){\n${B}\n}else{\n${E}\n}`,E1);
+DD('ifnight','c',X,'🌙 если сейчас ночь',{},{},(A,B,E)=>`if(nightAmt()>.15){\n${B}\n}else{\n${E}\n}`,E1);
+DD('iftile','c',X,'👣 если игрок стоит на блоке {t}',{t:TL},{},(A,B,E)=>`if(api.tileUnder()==${A.t}){\n${B}\n}else{\n${E}\n}`,E1);
+DD('ifloc','c',X,'📍 если игрок в локации {l}',{l:LC},{},(A,B,E)=>`if(me.l==${A.l}){\n${B}\n}else{\n${E}\n}`,E1);
+DD('ifteam','c',X,'🧑‍🤝‍🧑 если игрок в команде {t}',{t:'e'},{t:'Красные'},(A,B,E)=>`if((me.team||'')==${A.t}){\n${B}\n}else{\n${E}\n}`,E1);
+DD('repuntil','c',X,'🔁 повторять, пока верно {c} (не более {n} раз)',{c:'b',n:'e'},{n:100},(A,B)=>`for(var _ru=0;_ru<${A.n}&&(${A.c});_ru++){\n${B}\n}`);
+DD('trycatch','c',X,'🛡 попробовать →',{},{},(A,B,E)=>`try{\n${B}\n}catch(_e){\n${E}\n}`,E1);
+R('errt',X,'текст ошибки (внутри «иначе»)',{},{},()=>`(typeof _e!='undefined'?_e.message:'')`);
+/* --- экран, звук --- */
+DD('bigtxt','s',X,'🔠 огромный текст {t} на {s} сек',{t:'e',s:'e'},{t:'ПОБЕДА!',s:2},A=>`api.big(${A.t},${A.s})`);
+DD('pulse','s',X,'💥 три вспышки цветом {c}',{c:'c'},{c:'#ffffff'},A=>`[0,250,500].forEach(function(d){setTimeout(function(){api.flash(${A.c},.2)},d)})`);
+DD('tint','s',X,'🎨 тонировать экран цветом {c} на {a}%',{c:'c',a:'e'},{c:'#3050ff',a:25},A=>`api.tint(${A.c},${A.a})`);DD('tintoff','s',X,'🎨 убрать тонировку',{},{},()=>`api.tintOff()`);
+DD('hudbar','s',X,'📶 надпись «{k}»: {t} {v}%',{k:'e',t:'e',v:'e'},{k:'энергия',t:'⚡',v:50},A=>`api.hud(${A.k},${A.t}+' '+api.bar(${A.v},10))`);
+DD('sfx','s',X,'🔊 звук {n}',{n:()=>[['coin','монетка'],['hit','удар'],['power','бонус'],['error','ошибка'],['win','победа']]},{},A=>`api.sfx(${A.n})`);
+DD('melody','s',X,'🎵 мелодия {n} (ноты: C4 E4 G4 C5)',{n:'e'},{n:'C4 E4 G4 C5'},A=>`api.melody(${A.n})`);
+DD('fscr','s',X,'⛶ включить полный экран',{},{},()=>`document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen()`);
+DD('popup','c',X,'🪧 окно {t} с кнопкой {b} — по нажатию:',{t:'e',b:'e'},{t:'Готово!',b:'OK'},(A,B)=>`api.popup(${A.t},${A.b},function(){\n${B}\n})`);
+DD('vibp','s',X,'📳 вибрация узором {p} (мс через ;)',{p:'e'},{p:'100;60;100'},A=>`navigator.vibrate&&navigator.vibrate(String(${A.p}).split(';').map(Number))`);
+DD('hudblink','s',X,'✨ мигающая надпись «{k}»: {t}',{k:'e',t:'e'},{k:'важно',t:'Внимание!'},A=>`api.hudBlink(${A.k},${A.t})`);
+DD('hudclear','s',X,'🧽 убрать все надписи с экрана',{},{},()=>`api.hudClear()`);
+/* --- игроки --- */
+R('pcnt',X,'игроков рядом (радиус {r})',{r:'e'},{r:5},A=>`api.peersNear(${A.r}).length`);
+R('pnear',X,'имя ближайшего игрока (радиус {r})',{r:'e'},{r:6},A=>`((api.peersNear(${A.r}).sort(function(a,b){return Math.hypot(a.x-me.x,a.y-me.y)-Math.hypot(b.x-me.x,b.y-me.y)})[0]||{}).n||'')`);
+R('pnames',X,'имена игроков онлайн',{},{},()=>`[me.n].concat(typeof peers!='undefined'?peers.map(function(p){return p.n}):[]).join(', ')`);
+/* --- общая память --- */
+R('ghas',X,'есть ли общая переменная {k}?',{k:'e'},{k:'энергия'},A=>`(api.gget(${A.k})!==0)`);
+DD('gmax','s',X,'📈 общая {k} = большее из текущего и {v}',{k:'e',v:'e'},{k:'рекорд',v:0},A=>`api.gMax(${A.k},${A.v})`);
+DD('gmin','s',X,'📉 общая {k} = меньшее из текущего и {v}',{k:'e',v:'e'},{k:'лучшее время',v:0},A=>`api.gMin(${A.k},${A.v})`);
+DD('gpush','s',X,'📚 добавить в общий список {k} значение {v}',{k:'e',v:'e'},{k:'новости',v:'Привет'},A=>`api.gPush(${A.k},${A.v})`);
+R('gcnt',X,'размер общего списка {k}',{k:'e'},{k:'новости'},A=>`JSON.parse(api.gget(${A.k})||'[]').length`);
+R('gpick',X,'случайный из общего списка {k}',{k:'e'},{k:'новости'},A=>`api.gPick(${A.k})`);
+DD('gshift','s',X,'📤 взять первый из общего списка {k} → в {v}',{k:'e',v:'v'},{k:'очередь',v:'взятое'},A=>`${A.v}=api.gShift(${A.k})`);
+})();
+
+</script>
+<script>
+(()=>{
+const $$=q=>document.querySelector(q),H=(t,c,x)=>{const e=document.createElement(t);if(c)e.style.cssText=c;if(x!=null)e.textContent=x;return e};
+const KC={k:'#1b1b22',w:'#ffffff',r:'#d63a3a',R:'#8a1f1f',o:'#f08a24',y:'#ffd23f',Y:'#b8921f',g:'#4cb84a',G:'#2b7a35',l:'#9be07a',b:'#3f7fe0',B:'#23408a',c:'#58d6e8',C:'#2a93a8',n:'#a8703a',N:'#6a4220',t:'#e8c898',p:'#b05ad6',P:'#6a2f8a',m:'#ff9ec0',s:'#9a9aa6',S:'#5e5e6a',L:'#cfd0d8',d:'#33333d',e:'#f4ead0',q:'#ff6a00'},col=k=>k[0]=='#'?k:(KC[k]||'#f0f');
+const PAT=(g,px,rn,n,k)=>{const c=col(k);switch(n){case'noise':for(let i=0;i<40;i++)px(rn()*16|0,rn()*16|0,1,1,k);break;case'bricks':for(let y=0;y<16;y+=4){px(0,y,16,1,k);for(let x=(y/4%2)*4;x<16;x+=8)px(x,y,1,4,k)}break;case'planks':for(let y=0;y<16;y+=4)px(0,y,16,1,k);for(let i=0;i<10;i++)px(rn()*14|0,rn()*16|0,2,1,k);break;case'checker':for(let y=0;y<16;y+=8)for(let x=0;x<16;x+=8)if((x+y)%16==0)px(x,y,8,8,k);break;case'stripes':for(let y=1;y<16;y+=4)px(0,y,16,2,k);break;case'dots':for(let i=0;i<22;i++)px(rn()*15|0,rn()*15|0,2,2,k);break;case'waves':for(let y=2;y<16;y+=5)for(let x=0;x<16;x+=4)px(x,y+(x/4%2),3,1,k);break;case'blades':for(let i=0;i<26;i++)px(rn()*16|0,rn()*13|0,1,3,k);break;case'cracks':for(let i=0;i<5;i++){let x=rn()*16|0,y=rn()*16|0;for(let j=0;j<6;j++){px(x,y,1,1,k);x+=(rn()*3|0)-1;y+=(rn()*3|0)-1}}break;case'furrow':for(let y=2;y<16;y+=4){px(0,y,16,2,k)}break;case'cobble':for(let y=0;y<16;y+=5)for(let x=(y/5%2)*3;x<16;x+=6){px(x+1,y,4,1,k);px(x,y+1,1,3,k)}break}};
+const mkc=()=>{const c=document.createElement('canvas');c.width=c.height=16;return c};
+const draw=(dsl,seed)=>{const c=mkc(),g=c.getContext('2d');let s=seed*7919+13;const rn=()=>(s=(s*16807)%2147483647)/2147483647,px=(x,y,w,h,k)=>{g.fillStyle=col(k);g.fillRect(x,y,w,h)};
+ dsl.split(' ').forEach(t=>{if(!t)return;const op=t[0],a=t.slice(1).split(','),k=a[a.length-1],n=a.slice(0,-1).map(Number);
+  if(op=='f')px(0,0,16,16,a[0]);else if(op=='r')px(n[0],n[1],n[2],n[3],k);else if(op=='p')px(n[0],n[1],1,1,k);
+  else if(op=='c'||op=='o'){const rx=n[2],ry=op=='c'?n[2]:n[3];for(let y=0;y<16;y++)for(let x=0;x<16;x++){const dx=(x-n[0]+.5)/(rx+.2),dy=(y-n[1]+.5)/(ry+.2);if(dx*dx+dy*dy<=1)px(x,y,1,1,k)}}
+  else if(op=='l'){const[x1,y1,x2,y2]=n,m=Math.max(Math.abs(x2-x1),Math.abs(y2-y1))||1;for(let i=0;i<=m;i++)px(Math.round(x1+(x2-x1)*i/m),Math.round(y1+(y2-y1)*i/m),1,1,k)}
+  else if(op=='n'){for(let i=0;i<n[0];i++)px(rn()*16|0,rn()*16|0,1,1,k)}
+  else if(op=='u')PAT(g,px,rn,a[0],a[1])});return c};
+const SP=[];const A=(nm,cat,dsl)=>SP.push([nm,cat,dsl]);
+/* 🌍 Земля (24) */
+[['Трава','g','blades','G'],['Тёмная трава','G','blades','g'],['Сухая трава','#c9b458','blades','Y'],['Земля','n','noise','N'],['Чернозём','N','noise','d'],['Грядка','n','furrow','N'],['Песок','#e8d28a','noise','#d4bd72'],['Снег','w','noise','L'],['Лёд','c','cracks','b'],['Булыжник','s','cobble','S'],['Красный кирпич','r','bricks','R'],['Каменные кирпичи','s','bricks','S'],['Замшелые кирпичи','s','bricks','G'],['Доски','n','planks','N'],['Тёмные доски','N','planks','d'],['Шахматный пол','w','checker','d'],['Мрамор','L','cracks','s'],['Обсидиан','d','cracks','P'],['Лава','q','waves','y'],['Вода','b','waves','c'],['Глубокая вода','B','waves','b'],['Болото','G','noise','N'],['Глина','#c47a5a','noise','#a05f44'],['Гравий','s','dots','S']].forEach(([n,b,p,c])=>A(n,'🌍 Земля',`f${b} u${p},${c}`));
+/* 🧱 Блоки (15) */
+[['Угольная руда','d'],['Железная руда','t'],['Золотая руда','y'],['Алмазная руда','c'],['Рубиновая руда','r'],['Изумрудная руда','g'],['Медная руда','o'],['Аметистовая руда','p']].forEach(([n,c])=>A(n,'🧱 Блоки',`fs n40,S r3,3,2,2,${c} r9,2,3,2,${c} r5,9,3,2,${c} r11,10,2,3,${c} r2,12,2,2,${c}`));
+A('Стекло','🧱 Блоки','f#cdeef5 r0,0,16,1,w r0,0,1,16,w r15,0,1,16,C r0,15,16,1,C l3,12,7,8,w');A('Решётка','🧱 Блоки','fd r3,0,2,16,s r8,0,2,16,s r12,0,2,16,s r0,4,16,2,S r0,11,16,2,S');A('Деревянный ящик','🧱 Блоки','fn r0,0,16,2,N r0,14,16,2,N r0,0,2,16,N r14,0,2,16,N l2,2,14,14,N l14,2,2,14,N');A('Динамит','🧱 Блоки','fr r0,5,16,6,w r3,6,10,4,K p8,2,q r7,3,2,2,N');A('Книжный блок','🧱 Блоки','fN r1,1,14,6,n r1,9,14,6,n r2,2,2,4,r r5,2,2,4,b r8,2,3,4,g r12,2,2,4,y r2,10,3,4,p r6,10,2,4,r r9,10,3,4,b');A('Печь','🧱 Блоки','fS r2,2,12,12,s r4,8,8,6,K r5,10,6,3,q r6,11,4,2,y');A('Стог сена','🧱 Блоки','fy u stripes,Y r0,7,16,2,N');
+/* 🌸 Растения (23) */
+[['красный','r'],['розовый','m'],['жёлтый','y'],['синий','b'],['фиолетовый','p'],['белый','w'],['оранжевый','o'],['голубой','c']].forEach(([n,c])=>A('Цветок '+n,'🌸 Растения',`r7,8,2,7,G r4,10,3,1,G r9,11,3,1,G c8,6,3,${c} c8,6,1,y`));
+[['Мухомор','r'],['Лисичка','o'],['Поганка','L'],['Синий гриб','b']].forEach(([n,c])=>A(n,'🌸 Растения',`r6,8,4,6,e o8,7,5,3,${c} p6,6,w p9,5,w p10,7,w`));
+A('Дуб','🌸 Растения','r7,9,2,6,N c8,5,5,g c6,6,3,G c11,6,3,G');A('Ель','🌸 Растения','r7,12,2,3,N r5,9,6,3,G r4,6,8,3,G r5,3,6,3,G r7,1,2,2,G');A('Берёза','🌸 Растения','r7,6,2,9,L p7,8,K p8,11,K c8,4,4,l c5,5,2,g c11,5,2,g');A('Осенний клён','🌸 Растения','r7,9,2,6,N c8,5,5,o c6,6,3,q c11,6,3,y');A('Куст','🌸 Растения','c5,10,3,G c9,9,4,g c12,11,3,G');A('Ягодный куст','🌸 Растения','c5,10,3,G c9,9,4,G p5,9,r p9,8,r p10,11,r p7,11,r');A('Кактус','🌸 Растения','r7,3,3,11,g r3,6,2,5,g r4,10,4,2,g r12,5,2,5,g r9,9,4,2,g p8,5,y');A('Пшеница','🌸 Растения','l4,14,4,5,y l8,14,8,2,y l12,14,12,5,y r3,4,3,2,y r7,1,3,2,y r11,4,3,2,y');A('Морковная грядка','🌸 Растения','fN n20,d r3,6,2,4,g r8,7,2,4,g r12,6,2,4,g p3,10,o p8,11,o p12,10,o');A('Тыква','🌸 Растения','o8,10,6,5,o r7,4,2,3,G l5,6,5,14,q l11,6,11,14,q');A('Подсолнух','🌸 Растения','r7,8,2,7,G r4,11,3,1,G c8,6,4,y c8,6,2,N');
+/* 🍎 Еда (20) */
+[['Яблоко','c8,9,5,r r7,3,2,3,N r9,3,3,2,g p5,7,m'],['Хлеб','o8,9,6,4,n o8,8,5,3,t l5,7,7,9,N l8,6,10,8,N'],['Сыр','r2,6,12,6,y r2,6,12,1,Y c5,9,1,Y c10,8,1,Y c9,11,1,Y'],['Рыба','o7,8,5,3,c r12,6,3,5,c p4,7,K p6,8,w'],['Яйцо','o8,9,4,5,e r6,6,2,1,w'],['Торт','r3,8,10,5,m r3,8,10,2,w r4,6,8,2,t r7,3,2,3,e p8,2,q'],['Пирог','c8,9,6,N c8,9,5,t l8,4,8,14,N l3,9,13,9,N'],['Печенье','c8,8,6,n p6,6,N p10,7,N p7,10,N p10,10,N'],['Пицца','r2,3,12,3,t r3,6,10,2,y r4,8,8,2,y r5,10,6,2,y r6,12,4,1,y c6,6,1,r c9,8,1,r c7,10,1,r'],['Суп','r3,6,10,6,L r2,6,12,1,s r4,6,8,2,o r4,12,8,2,s p6,7,g p9,7,r'],['Морковь','r6,5,4,3,o r7,8,2,3,o r7,11,1,3,o r6,2,2,3,g r8,1,2,4,g'],['Помидор','c8,9,5,r r6,3,4,2,g p5,7,m'],['Кукуруза','o8,9,3,6,y r7,3,2,2,g l5,6,7,12,G l11,6,9,12,G'],['Арбуз','r2,6,12,6,r r2,12,12,1,g r2,13,12,1,G p5,8,K p8,9,K p10,7,K r2,6,12,1,w'],['Вишня','c5,11,3,r c11,11,3,r l5,8,8,3,G l11,8,8,3,G p4,10,m'],['Виноград','c6,6,2,p c10,6,2,p c4,9,2,p c8,9,2,p c12,9,2,p c6,12,2,p c10,12,2,p r8,2,1,3,G'],['Молоко','r5,4,6,10,w r5,3,6,2,b r6,8,4,3,b'],['Мёд','r4,5,8,9,y r3,4,10,2,N r5,8,6,3,Y'],['Леденец','c8,6,4,m c8,6,2,w r8,10,1,5,w'],['Окорок','c10,6,4,n r4,10,6,2,w c3,11,1,w r7,8,3,3,n']].forEach(([n,d])=>A(n,'🍎 Еда',d));
+/* ⚔ Предметы (32) */
+[['Меч','l13,2,5,10,L l14,3,6,11,s l4,9,8,13,N r2,12,2,2,N'],['Топор','l4,13,11,4,N r8,2,5,5,s r12,3,2,3,L'],['Кирка','l5,13,11,5,N r3,3,10,2,s r2,4,2,3,s r12,4,2,3,s'],['Лопата','l4,13,10,6,N r9,2,4,5,s r10,2,2,5,L'],['Мотыга','l5,13,11,4,N r9,3,5,2,s r13,3,1,4,s'],['Удочка','l3,13,12,2,N l12,2,13,10,w p13,11,r'],['Лук','l10,2,13,8,N l13,8,10,14,N l10,2,10,14,w'],['Щит','r3,2,10,8,b r4,10,8,2,b r5,12,6,1,b r7,3,2,9,y r4,6,8,2,y'],['Ключ','c5,5,3,y c5,5,1,K r7,7,6,2,y r11,9,2,2,y r9,9,1,2,y'],['Монета','c8,8,6,Y c8,8,5,y r7,5,2,6,Y'],['Свиток','r3,3,10,10,e r2,2,2,12,t r12,2,2,12,t l5,6,10,6,N l5,8,10,8,N l5,10,9,10,N'],['Книга','r3,2,10,12,R r4,2,9,11,r r3,2,1,12,K r5,4,6,1,y'],['Факел','r7,7,2,7,N r6,3,4,4,q r7,2,2,2,y'],['Фонарик','r6,1,4,2,S r4,3,8,9,y r5,4,6,7,w r4,12,8,2,S'],['Бомба','c8,10,5,K p6,8,w r8,2,2,3,N p9,1,q'],['Сердце','c5,6,3,r c10,6,3,r r3,6,10,2,r r4,8,8,2,r r5,10,6,1,r r7,11,2,1,r p4,5,m'],['Звезда','r7,2,2,12,y r2,7,12,2,y l4,4,12,12,y l12,4,4,12,y c8,8,2,Y']].forEach(([n,d])=>A(n,'⚔ Предметы',d));
+[['красное','r'],['синее','b'],['зелёное','g'],['фиолетовое','p'],['жёлтое','y'],['голубое','c'],['оранжевое','o']].forEach(([n,c])=>A('Зелье '+n,'⚔ Предметы',`r6,2,4,2,N r7,4,2,2,L r5,6,6,7,${c} r5,6,6,1,L p6,8,w`));
+[['красный','r'],['синий','b'],['зелёный','g'],['фиолетовый','p'],['жёлтый','y'],['голубой','c'],['белый','w'],['оранжевый','o']].forEach(([n,c])=>A('Самоцвет '+n,'💎 Самоцветы',`r6,4,4,1,${c} r5,5,6,1,${c} r4,6,8,2,${c} r5,8,6,1,${c} r6,9,4,1,${c} r7,10,2,1,${c} r5,5,2,1,w p6,6,w`));
+/* 🛋 Декор и мебель (28) */
+[['Кровать','r2,6,12,7,b r2,4,12,3,w r2,3,2,12,N r12,3,2,12,N r3,6,4,3,e'],['Стул','r4,2,2,12,N r4,8,8,2,N r10,8,2,6,N r4,12,2,3,N'],['Стол','r2,6,12,3,N r3,9,2,6,N r11,9,2,6,N r2,6,12,1,n'],['Фонарный столб','r7,4,2,11,S r5,1,6,4,y r6,2,4,2,w r5,14,6,2,S'],['Сундук','r2,5,12,9,N r2,5,12,4,n r2,9,12,1,K r7,8,2,3,y'],['Бочка','r3,2,10,12,n r3,4,10,1,S r3,10,10,1,S r4,2,1,12,N r8,2,1,12,N r12,2,1,12,N'],['Часы','c8,8,6,N c8,8,5,w l8,8,8,4,K l8,8,11,8,K'],['Зеркало','r4,2,8,12,y r5,3,6,10,c r5,3,2,10,w'],['Картина-пейзаж','r2,3,12,10,N r3,4,10,8,b r3,9,10,3,g c11,6,1,y'],['Картина-портрет','r3,2,10,12,N r4,3,8,10,e c8,7,2,t r6,10,4,2,r'],['Картина-натюрморт','r2,3,12,10,y r3,4,10,8,m c7,9,2,r c10,9,2,y'],['Красный ковёр','fr r1,1,14,14,R r2,2,12,12,r r4,4,8,8,y'],['Синий ковёр','fb r1,1,14,14,B r3,3,10,10,c'],['Зелёный ковёр','fg r1,1,14,14,G r3,3,10,10,l'],['Ваза','r6,2,4,2,b r5,4,6,2,b r4,6,8,6,b r5,12,6,2,b r4,8,8,1,w'],['Свеча','r6,6,4,8,e p8,3,q p8,4,y r7,5,2,1,y'],['Камин','r2,3,12,12,S r3,6,10,9,K r5,9,6,5,q r6,11,4,3,y r2,3,12,2,s'],['Табличка','r7,8,2,7,N r2,2,12,7,n r3,3,10,5,t l4,5,11,5,N'],['Почтовый ящик','r7,9,2,6,N r3,3,10,6,b o8,3,5,2,b r10,4,3,2,r'],['Забор','r1,3,2,12,n r7,3,2,12,n r13,3,2,12,n r0,6,16,2,N r0,11,16,2,N'],['Колодец','r2,7,12,7,S r3,8,10,5,b r3,2,2,6,N r11,2,2,6,N r2,2,12,2,r'],['Скамейка','r2,6,12,3,n r3,9,2,5,N r11,9,2,5,N r2,3,12,2,N'],['Окно','r2,2,12,12,N r3,3,10,10,c r7,3,2,10,N r3,7,10,2,N r3,3,4,3,w'],['Деревянная дверь','r3,1,10,14,N r4,2,8,12,n r10,8,1,2,y'],['Железная дверь','r3,1,10,14,S r4,2,8,12,s r10,8,1,2,y'],['Арочная дверь','r3,2,10,13,B r4,3,8,11,c r9,8,1,2,y'],['Шкаф','r3,1,10,14,N r4,2,4,12,n r9,2,3,12,n p7,8,y p9,8,y'],['Куст в горшке','r5,10,6,5,n r4,10,8,1,N c8,7,4,g c6,8,2,G c10,8,2,G']].forEach(([n,d])=>A(n,'🛋 Декор',d));
+[['красный','r'],['синий','b'],['зелёный','g'],['жёлтый','y'],['фиолетовый','p'],['оранжевый','o']].forEach(([n,c])=>A('Флаг '+n,'🛋 Декор',`r3,1,1,14,N r4,2,9,7,${c} r4,7,3,3,${c} p8,4,w`));
+/* 🌳 Природа (12) */
+[['Камень','o8,10,6,4,s o8,10,4,2,L r4,10,8,1,S'],['Валун','o8,9,7,6,S o7,8,4,3,s'],['Бревно','r2,5,12,6,N r2,5,12,1,n c3,8,3,n c3,8,1,N'],['Пень','r4,6,8,7,N o8,6,4,2,n c8,6,1,N'],['Костёр','l3,13,13,13,N l4,12,12,12,N c8,8,4,q c8,9,2,y c8,10,1,w'],['Снеговик','c8,11,4,w c8,6,3,w p7,5,K p9,5,K p8,6,o r6,2,4,2,K'],['Облако','o5,10,3,3,w o9,8,4,4,w o12,10,3,3,w r4,10,10,3,w'],['Солнце','c8,8,4,y l8,1,8,3,y l8,13,8,15,y l1,8,3,8,y l13,8,15,8,y'],['Луна','c8,8,6,L c10,7,5,B'],['Радуга','r1,9,14,1,r r1,10,14,1,o r1,11,14,1,y r1,12,14,1,g r1,13,14,1,b r1,14,14,1,p'],['Капля','r7,2,2,3,b r6,5,4,2,b r5,7,6,5,b r6,12,4,1,b p6,8,w'],['Листок','o8,8,5,3,g l3,13,13,3,G']].forEach(([n,d])=>A(n,'🌳 Природа',d));
+/* 👾 Существа (18) */
+[['зелёный','g'],['синий','b'],['красный','r'],['фиолетовый','p']].forEach(([n,c])=>A('Слизень '+n,'👾 Существа',`o8,11,6,4,${c} o8,10,5,3,${c} r6,9,1,2,K r10,9,1,2,K p6,9,w`));
+[['Летучая мышь','o8,8,2,2,d r2,5,5,3,d r9,5,5,3,d p7,7,r p9,7,r'],['Призрак','r4,4,8,9,w c8,4,4,w r4,12,2,2,w r7,12,2,2,w r10,12,2,2,w p6,6,K p9,6,K'],['Паук','c8,8,3,d l3,5,6,7,d l3,11,6,9,d l13,5,10,7,d l13,11,10,9,d p7,7,r p9,7,r'],['Синяя рыбка','o7,8,5,3,b r12,6,3,5,b p4,7,K'],['Золотая рыбка','o7,8,5,3,y r12,6,3,5,o p4,7,K'],['Птичка','c8,9,4,b r11,8,3,2,y p6,8,K r4,10,3,1,B'],['Пчела','o8,8,4,3,y r6,6,1,5,K r9,6,1,5,K o6,4,2,2,L o10,4,2,2,L'],['Бабочка','c5,6,3,p c11,6,3,p c5,10,2,m c11,10,2,m r7,5,2,7,d'],['Лягушка','o8,10,6,4,g c5,6,2,g c11,6,2,g p5,6,K p11,6,K r5,11,6,1,G'],['Кот','r4,5,8,8,o r4,3,2,3,o r10,3,2,3,o p6,8,K p10,8,K p8,10,m'],['Пёс','r4,5,8,8,t r3,4,2,5,n r11,4,2,5,n p6,8,K p10,8,K r7,10,2,2,K'],['Кролик','r5,1,2,6,L r9,1,2,6,L r4,6,8,8,L p6,9,K p9,9,K p8,11,m'],['Цыплёнок','c8,9,5,y p6,8,K r12,9,2,1,o r7,13,1,2,o r9,13,1,2,o'],['Мышь','o8,10,5,3,s c4,8,2,s p9,9,K r12,10,3,1,m']].forEach(([n,d])=>A(n,'👾 Существа',d));
+/* 🔣 Иконки (14) */
+[['Стрелка вверх','l8,3,3,8,w l8,3,13,8,w r7,5,2,9,w'],['Стрелка вниз','l8,13,3,8,w l8,13,13,8,w r7,2,2,9,w'],['Стрелка влево','l3,8,8,3,w l3,8,8,13,w r5,7,9,2,w'],['Стрелка вправо','l13,8,8,3,w l13,8,8,13,w r2,7,9,2,w'],['Галочка','l3,8,7,12,g l3,9,7,13,g l7,12,13,4,g l7,13,13,5,g'],['Крестик','l3,3,13,13,r l13,3,3,13,r l4,3,13,12,r l12,3,3,12,r'],['Нота','c5,12,2,w r7,3,1,9,w r7,3,5,2,w'],['Череп','c8,7,5,L r5,11,6,3,L p6,7,K p10,7,K p8,10,K'],['Шестерёнка','c8,8,5,S c8,8,2,K r7,1,2,3,S r7,12,2,3,S r1,7,3,2,S r12,7,3,2,S'],['Молния','l9,1,5,8,y l10,1,6,8,y l5,8,11,8,y l11,8,6,15,y'],['Огонь','o8,10,4,5,q o8,10,2,3,y r7,3,2,4,q'],['Снежинка','l8,2,8,14,c l2,8,14,8,c l3,3,13,13,c l13,3,3,13,c'],['Лапа','c8,11,3,N c4,7,1,N c7,5,1,N c10,5,1,N c13,7,1,N'],['Корона','r3,8,10,5,y r3,5,2,3,y r7,3,2,5,y r11,5,2,3,y p4,10,r p8,10,b p12,10,r']].forEach(([n,d])=>A(n,'🔣 Иконки',d));
+/* ⚡ Электроника (12) */
+[['Генератор','r2,3,12,11,S r3,4,10,9,d l9,4,6,9,y l6,9,10,9,y l10,9,7,13,y'],['Батарея','r5,4,6,10,d r6,2,4,2,L r5,8,6,5,g p8,6,y'],['Лампа включена','c8,7,5,y c8,7,3,w r6,12,4,2,S'],['Лампа выключена','c8,7,5,L r6,12,4,2,S'],['Выключатель','r4,2,8,12,S r5,3,6,10,L r7,4,2,4,r'],['Кнопка','r3,9,10,5,S r4,6,8,4,r r4,6,8,1,m'],['Монитор','r2,2,12,9,S r3,3,10,7,B r6,11,4,2,S r4,13,8,1,S p5,5,g l5,7,9,7,g'],['Телевизор','r2,4,12,9,N r3,5,8,7,c r12,6,1,2,y l5,2,8,4,S l11,2,8,4,S'],['Антенна','r7,5,2,10,S l8,5,3,1,S l8,5,13,1,S p3,1,r p13,1,r'],['Плата','fG n20,y l2,4,14,4,y l14,4,14,12,y r5,6,3,3,K r9,9,4,3,K'],['Солнечная панель','fB r1,1,6,6,b r9,1,6,6,b r1,9,6,6,b r9,9,6,6,b'],['Провод','fd r0,7,16,2,o r0,7,16,1,y']].forEach(([n,d])=>A(n,'⚡ Электроника',d));
+/* --- довести ровно до 200 --- */
+A('Провод-крест','⚡ Электроника','fd r0,7,16,2,o r7,0,2,16,o c8,8,2,y');A('Поднос с едой','🍎 Еда','r1,9,14,3,S r2,8,12,1,s c5,6,3,r c9,6,3,y c12,7,2,g');A('Лавка','🛋 Декор','r1,3,14,3,r r1,3,3,3,w r7,3,3,3,w r13,3,2,3,w r2,6,2,9,N r12,6,2,9,N r2,10,12,3,n');A('Знак «Стоп»','🛋 Декор','r7,9,2,6,S r3,3,10,7,r r4,4,8,5,R r5,6,6,2,w');A('Маяк','🛋 Декор','r6,3,4,10,w r6,5,4,2,r r6,9,4,2,r r5,1,6,2,y r4,13,8,2,S');
+window.SPR={list:SP,draw:(i)=>draw(SP[i][2],i),sheet:()=>{const cols=20,rows=Math.ceil(SP.length/cols),S=4,c=document.createElement('canvas');c.width=cols*16*S;c.height=rows*16*S;const g=c.getContext('2d');g.imageSmoothingEnabled=false;g.fillStyle='#2b2748';g.fillRect(0,0,c.width,c.height);SP.forEach((s,i)=>g.drawImage(window.SPR.draw(i),(i%cols)*16*S,Math.floor(i/cols)*16*S,16*S,16*S));return c.toDataURL()}};
+/* --- библиотека спрайтов: интерфейс --- */
+const POOL=[...'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюяΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψω'];
+const addTile=(i,solid)=>{const ch=POOL.find(c=>!world.tiles[c]);if(!ch){toast('Нет свободных символов');return}const s=SP[i];world.tiles[ch]={n:s[0],b:solid?1:0,spr:i};world.tex['t'+ch]={fps:4,fr:[window.SPR.draw(i).toDataURL()]};world.items=world.items||[];world.items.push({id:'b_spr'+i,n:s[0],e:s[1].split(' ')[0],cost:3,tile:ch});try{loadTex()}catch(e){}toast('Добавлен блок «'+s[0]+'» (символ '+ch+')');return ch};
+const lib=()=>{const o=H('div','position:fixed;inset:0;z-index:99996;background:#000d;overflow:auto;padding:10px;color:#fff;font:14px system-ui');let cat='',q='';
+ const cats=[...new Set(SP.map(s=>s[1]))],draw2=()=>{o.innerHTML='';const top=H('div','position:sticky;top:0;background:#26224a;padding:8px;border-radius:12px;z-index:2;display:flex;flex-direction:column;gap:6px');const r1=H('div','display:flex;gap:6px;align-items:center');r1.append(H('b','flex:1;font-size:16px','🎨 Библиотека спрайтов ('+SP.length+')'));
+  const bt=(t,f,p)=>{const b=H('button','background:#3b3570;color:#fff;border:0;border-radius:10px;padding:10px 12px;font:inherit',t);b.onclick=f;(p||r1).append(b)};
+  bt('⬇ PNG-лист',()=>{const a=document.createElement('a');a.href=window.SPR.sheet();a.download='sprites_200.png';a.click()});bt('✕',()=>o.remove());
+  const sr=H('input','padding:10px;border-radius:10px;border:0;font:16px system-ui;color:#000');sr.placeholder='🔍 поиск по названию';sr.value=q;sr.oninput=()=>{q=sr.value;grid()};
+  const r2=H('div','display:flex;gap:6px;overflow-x:auto');[['','Все']].concat(cats.map(c=>[c,c])).forEach(([c,t])=>{const b=H('button','flex:none;border:0;border-radius:10px;padding:8px 10px;font:13px system-ui;color:#fff;background:'+(cat==c?'#2fa86b':'#3b3570'),t);b.onclick=()=>{cat=c;draw2()};r2.append(b)});top.append(r1,sr,r2);o.append(top);const g=H('div','display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px;margin-top:10px');g.id='sprg';o.append(g);grid()};
+ const grid=()=>{const g=$$('#sprg');if(!g)return;g.innerHTML='';SP.forEach((s,i)=>{if((cat&&s[1]!=cat)||(q&&!s[0].toLowerCase().includes(q.toLowerCase())))return;const k=H('div','background:#2f2b52;border-radius:10px;padding:6px;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center');const c=window.SPR.draw(i);c.style.cssText='width:56px;height:56px;image-rendering:pixelated;border-radius:6px;background:#3a3566';k.append(c,H('small','font-size:11px',s[0]));k.onclick=()=>sheet(i);g.append(k)})};
+ const sheet=i=>{const s=SP[i],d=H('div','position:fixed;inset:0;z-index:99997;background:#000b;display:flex;align-items:flex-end;justify-content:center'),c=H('div','background:#26224a;border-radius:18px 18px 0 0;padding:14px;width:min(100%,420px);display:flex;flex-direction:column;gap:8px');const pv=window.SPR.draw(i);pv.style.cssText='width:96px;height:96px;image-rendering:pixelated;align-self:center;background:#3a3566;border-radius:8px';c.append(pv,H('b','text-align:center',s[0]+' · '+s[1]));
+  const b=(t,f)=>{const x=H('button','background:#3b3570;color:#fff;border:0;border-radius:10px;padding:12px;font:inherit',t);x.onclick=f;c.append(x)};
+  b('🧱 Добавить как твёрдый блок',()=>{addTile(i,1);d.remove();try{renderTiles()}catch(e){}});b('🌿 Добавить как проходимый блок/декор',()=>{addTile(i,0);d.remove();try{renderTiles()}catch(e){}});
+  const sel=H('select','padding:10px;border-radius:10px;font:16px system-ui;color:#000');sel.innerHTML='<option value="">🎨 Заменить текстуру существующего блока…</option>'+Object.entries(world.tiles).map(([ch,t])=>`<option value="${ch}">${ch} — ${t.n||ch}</option>`).join('');sel.onchange=()=>{if(!sel.value)return;world.tex['t'+sel.value]={fps:4,fr:[pv.toDataURL?window.SPR.draw(i).toDataURL():'']};try{loadTex()}catch(e){}toast('Текстура блока '+sel.value+' заменена');d.remove()};c.append(sel);b('✕ Закрыть',()=>d.remove());d.append(c);d.onclick=e=>{if(e.target==d)d.remove()};document.body.append(d)};
+ draw2();document.body.append(o)};
+const addBtn=(wrap)=>{const a=$$('#admb');if(!a||a.querySelector('#sprbtn'))return;const b=H('button','width:100%;min-height:48px;background:#e0408a;color:#fff;border:0;border-radius:12px;font:bold 15px system-ui;margin-bottom:8px','🎨 Библиотека спрайтов (200)');b.id='sprbtn';b.onclick=lib;a.prepend(b)};
+for(const f of['renderTex','renderTiles']){try{const o=window[f]||eval(f);const n=function(){const r=o.apply(this,arguments);addBtn();return r};eval(f+'=n')}catch(e){}}
+})();
+
+</script>
 </body></html>
